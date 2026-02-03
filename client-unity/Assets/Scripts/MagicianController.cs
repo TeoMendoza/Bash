@@ -3,11 +3,15 @@ using UnityEngine;
 using SpacetimeDB.Types;
 using Unity.Cinemachine;
 using Unity.VisualScripting;
+using NUnit.Framework;
+using System;
 
 public class MagicianController : MonoBehaviour
 {
     [SerializeField] private CinemachineCamera thirdPersonCam;
     [SerializeField] private GameObject thirdPersonCamPivot;
+    [SerializeField] private Canvas crosshair;
+    [SerializeField] private MagicianHUDController magicianHud;
 
     Magician Magician;
     bool IsOwner;
@@ -65,12 +69,27 @@ public class MagicianController : MonoBehaviour
             thirdPersonCam.gameObject.SetActive(IsOwner);
 
         if (IsOwner)
+        {
             mainCamera = FindFirstObjectByType<CinemachineBrain>()?.OutputCamera ?? throw new System.Exception("No Main Camera Brain OutputCamera");
+
+            if (crosshair != null)
+                crosshair.gameObject.SetActive(true);
+                crosshair.worldCamera = mainCamera;
+        
+            if (magicianHud != null)
+                magicianHud.gameObject.SetActive(true);
+                magicianHud.HudCanvas.worldCamera = mainCamera;
+        }
+            
+
     }
 
     void Start()
     {
         GameManager.Conn.Db.Magician.OnUpdate += HandleMagicianUpdate;
+        GameManager.Conn.Db.Magician.OnUpdate += HandleHudUpdate;
+        GameManager.Conn.Db.PlayerEffects.OnInsert += HandleMagicianEffectInsert;
+        GameManager.Conn.Db.PlayerEffects.OnDelete += HandleMagicianEffectDelete;
     }
 
     void Update()
@@ -143,7 +162,6 @@ public class MagicianController : MonoBehaviour
         if (Input.GetMouseButton(1))
             GameManager.Conn.Reducers.HandleStatelessActionRequestMagician(new StatelessActionRequestMagician(Action: MagicianStatelessAction.Tarot));
 
-        
     }
 
     public MovementRequest BuildMovementRequest()
@@ -288,6 +306,74 @@ public class MagicianController : MonoBehaviour
 
         TargetForwardSpeed = vLocal.z;
         TargetHorizontalSpeed = vLocal.x;
+    }
+
+    public void HandleHudUpdate(EventContext context, Magician oldMagician, Magician newMagician)
+    {
+        if (Identity != newMagician.Identity) return;
+        
+        // Health Hud Update
+        if (oldMagician.CombatInformation.Health != newMagician.CombatInformation.Health)
+            magicianHud.UpdateHealth((int)newMagician.CombatInformation.Health);
+
+        // Throwing Cards Hud Update
+        if (oldMagician.Bullets.Count != newMagician.Bullets.Count)
+            magicianHud.UpdateAmmo(newMagician.Bullets.Count);
+
+        // Tarot Hud Update
+        if (oldMagician.StatelessTimers[0].State is StatelessTimerState.Useable && newMagician.StatelessTimers[0].State is StatelessTimerState.InCooldown)
+            magicianHud.StartTarotCooldown();
+        
+        if (newMagician.StatelessTimers[0].State is StatelessTimerState.InCooldown)
+            magicianHud.UpdateTarot((int)Math.Ceiling(newMagician.StatelessTimers[0].CooldownTime - newMagician.StatelessTimers[0].CurrentTime));
+
+        if (oldMagician.StatelessTimers[0].State is StatelessTimerState.InCooldown && newMagician.StatelessTimers[0].State is StatelessTimerState.Useable)
+            magicianHud.EndTarotCooldown();
+
+        // Dust Hud Update
+        if (oldMagician.Timers[2].State is TimerState.Usable && newMagician.Timers[2].State is not TimerState.Usable)
+            magicianHud.StartDustCooldown();
+        
+        if (newMagician.Timers[2].State is not TimerState.Usable)
+            magicianHud.UpdateDust((int)Math.Ceiling(newMagician.Timers[2].CooldownTime - newMagician.Timers[2].CurrentTime));
+
+        if (oldMagician.Timers[2].State is not TimerState.Usable && newMagician.Timers[2].State is TimerState.Usable)
+            magicianHud.EndDustCooldown();
+
+        // Cloak Hud Update
+        if (oldMagician.Timers[3].State is TimerState.Usable && newMagician.Timers[3].State is not TimerState.Usable)
+            magicianHud.StartCloakCooldown();
+        
+        if (newMagician.Timers[3].State is not TimerState.Usable)
+            magicianHud.UpdateCloak((int)Math.Ceiling(newMagician.Timers[3].CooldownTime - newMagician.Timers[3].CurrentTime));
+
+        if (oldMagician.Timers[3].State is not TimerState.Usable && newMagician.Timers[3].State is TimerState.Usable)
+            magicianHud.EndCloakCooldown();
+
+        // Hypnosis Hud Update
+        if (oldMagician.Timers[4].State is TimerState.Usable && newMagician.Timers[4].State is not TimerState.Usable)
+            magicianHud.StartHypnosisCooldown();
+        
+        if (newMagician.Timers[4].State is not TimerState.Usable)
+            magicianHud.UpdateHypnosis((int)Math.Ceiling(newMagician.Timers[4].CooldownTime - newMagician.Timers[4].CurrentTime));
+
+        if (oldMagician.Timers[4].State is not TimerState.Usable && newMagician.Timers[4].State is TimerState.Usable)
+            magicianHud.EndHypnosisCooldown();
+        
+    }
+
+    public void HandleMagicianEffectInsert(EventContext context, PlayerEffect insertedEffect)
+    {
+        // Check If Effect Is On Us. If Single Effect, apply visual effect (damage). If cloak or speed, push those effects to HUD manager and let it handle them (might need a handle update so we can send updated duration times. Dont necessarily show time, just show an icon that indicates the effect, and when its about to finish, show a flashing effect on the icon)
+        // If Dust, push to HUD manager and let it apply camera blind effect. If Taroted, push to HUD manager and let it handle it (need effect update func), if Stun, push to HUD manager and let it handle visual stun part.
+        // Might not need the update part, its only if we want to indicate when things are close to losing active. Otherwise, we can just use the on delete handler
+
+        // Next, Check If We are Effect Sender. If Single Effect (damage), apply hit marker and dink if damage multiplier not 1 (headshot), etc, etc, similar to if effect is on us but this time if were sender
+    }
+
+    public void HandleMagicianEffectDelete(EventContext context, PlayerEffect deletedEffect)
+    {
+        // Check If Effect Is On Us, if is, check effect type and push to HUD manager and let it remove the effect visually and the icon indicator
     }
 
     public void OnTriggerEnter(Collider other)

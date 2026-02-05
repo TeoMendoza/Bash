@@ -469,3 +469,12 @@ pub fn hypnotise(ctx: &ReducerContext, camera_info: HypnosisCameraInformation) {
 }
 
 
+#[reducer]
+pub fn take_artifical_damage(ctx: &ReducerContext)
+{
+    let me_option = ctx.db.magician().identity().find(ctx.sender);
+    if let Some(me) = me_option {
+        let damage = create_damage_effect(25.0, 1.0);
+        add_effects_to_table(ctx, vec![damage], me.id, me.id, me.game_id);
+    }
+}

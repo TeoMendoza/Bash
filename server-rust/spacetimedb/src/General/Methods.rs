@@ -57,7 +57,7 @@ pub fn decrement_player_count_of_game(ctx: &ReducerContext, game_id: u32) { // D
 }
 
 pub fn create_game(ctx: &ReducerContext) -> Game { // Creates and inserts new game with scheduled reducers configured - Test player parameter adds fake player (parameter WIP)
-    let created_game = ctx.db.game().insert(Game { id: 0, max_players: 12, current_players: 1, in_progress: false });
+    let created_game = ctx.db.game().insert(Game { id: 0, max_players: 12, current_players: 0, in_progress: false });
     let tick_millis: u64 = 1000 / 60;
     let tick_rate: f32 = 1.0 / 60.0;
 
@@ -67,7 +67,7 @@ pub fn create_game(ctx: &ReducerContext) -> Game { // Creates and inserts new ga
     ctx.db.gravity_magician().insert(GravityTimerMagician { scheduled_id: 0, scheduled_at: ScheduleAt::Interval(Duration::from_millis(tick_millis).into()), tick_rate, gravity: 20.0, game_id: created_game.id });
     ctx.db.player_effects_table_timer().insert(PlayerEffectsTableTimer {scheduled_id: 0, scheduled_at: ScheduleAt::Interval(Duration::from_millis(tick_millis).into()), tick_rate, game_id: created_game.id });
     
-    create_test_player(ctx, created_game.id);
+    //create_test_player(ctx, created_game.id);
     created_game
 }
 

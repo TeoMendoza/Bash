@@ -12,13 +12,14 @@ GameObject:
   - component: {fileID: 3419755120602810099}
   - component: {fileID: 1432813901537749969}
   - component: {fileID: 7664610988787320243}
+  - component: {fileID: 230644660164306970}
   m_Layer: 5
   m_Name: Crosshair
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &4625681249258502315
 RectTransform:
   m_ObjectHideFlags: 0
@@ -102,6 +103,18 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!114 &230644660164306970
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6651014262233375888}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c9cf62e877c8444b8d68657604b6ea0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &6944249645903739195
 GameObject:
   m_ObjectHideFlags: 0

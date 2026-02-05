@@ -148,7 +148,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 87e10196f6cae41f9888eb74336c873a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MagicianPrefab: {fileID: 3838300054775145683, guid: 9cac75c6e83db44a488f7f31d8e9a9b3, type: 3}
+  MagicianPrefab: {fileID: 3838300054775145683, guid: e81bb8509225f49f18b259db167e7369, type: 3}
   MapPrefabs:
   - {fileID: 4101123262796976276, guid: a24d05f48d0724df69c860b4a3e8fd8e, type: 3}
   - {fileID: 6537649743902597972, guid: b3d0590656a04451da247dcf2541587e, type: 3}
@@ -259,7 +259,7 @@ Transform:
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
   m_LocalRotation: {x: 0.08685689, y: -0.021732317, z: 0.0018952164, w: 0.99598193}
-  m_LocalPosition: {x: 0.39352065, y: 1.890158, z: -2.1294599}
+  m_LocalPosition: {x: 0.59333026, y: 1.890158, z: -2.1207361}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

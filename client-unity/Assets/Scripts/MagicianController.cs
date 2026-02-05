@@ -5,6 +5,7 @@ using Unity.Cinemachine;
 using Unity.VisualScripting;
 using NUnit.Framework;
 using System;
+using UnityEngine.AI;
 
 public class MagicianController : MonoBehaviour
 {
@@ -16,7 +17,7 @@ public class MagicianController : MonoBehaviour
     Magician Magician;
     bool IsOwner;
     public Identity Identity;
-    public uint Id;
+    public ulong Id;
     public string Name;
     public uint MatchId;
 
@@ -53,7 +54,7 @@ public class MagicianController : MonoBehaviour
     {
         Magician = Character;
         Identity = Character.Identity;
-        Id = (uint)Character.Id;
+        Id = Character.Id;
         Name = Character.Name;
         MatchId = Character.GameId;
 
@@ -72,24 +73,22 @@ public class MagicianController : MonoBehaviour
         {
             mainCamera = FindFirstObjectByType<CinemachineBrain>()?.OutputCamera ?? throw new System.Exception("No Main Camera Brain OutputCamera");
 
-            if (crosshair != null)
+            if (crosshair != null) {
                 crosshair.gameObject.SetActive(true);
                 crosshair.worldCamera = mainCamera;
-        
-            if (magicianHud != null)
+            }
+                
+            if (magicianHud != null) {
                 magicianHud.gameObject.SetActive(true);
                 magicianHud.HudCanvas.worldCamera = mainCamera;
+            }     
         }
-            
 
-    }
-
-    void Start()
-    {
         GameManager.Conn.Db.Magician.OnUpdate += HandleMagicianUpdate;
         GameManager.Conn.Db.Magician.OnUpdate += HandleHudUpdate;
         GameManager.Conn.Db.PlayerEffects.OnInsert += HandleMagicianEffectInsert;
-        GameManager.Conn.Db.PlayerEffects.OnDelete += HandleMagicianEffectDelete;
+        GameManager.Conn.Db.PlayerEffects.OnUpdate += HandleMagicianEffectUpdate;
+        GameManager.Conn.Db.PlayerEffects.OnDelete += HandleMagicianEffectDelete;        
     }
 
     void Update()
@@ -162,6 +161,9 @@ public class MagicianController : MonoBehaviour
         if (Input.GetMouseButton(1))
             GameManager.Conn.Reducers.HandleStatelessActionRequestMagician(new StatelessActionRequestMagician(Action: MagicianStatelessAction.Tarot));
 
+        if (Input.GetKeyDown(KeyCode.M))
+            GameManager.Conn.Reducers.TakeArtificalDamage();
+
     }
 
     public MovementRequest BuildMovementRequest()
@@ -215,7 +217,7 @@ public class MagicianController : MonoBehaviour
                 return Entry.Subscribers.Count != 0;
         }
 
-        throw new System.Exception($"Permission Entry With Key {Key} Not Found");
+        throw new Exception($"Permission Entry With Key {Key} Not Found");
     }
 
     void LateUpdate()
@@ -364,16 +366,38 @@ public class MagicianController : MonoBehaviour
 
     public void HandleMagicianEffectInsert(EventContext context, PlayerEffect insertedEffect)
     {
-        // Check If Effect Is On Us. If Single Effect, apply visual effect (damage). If cloak or speed, push those effects to HUD manager and let it handle them (might need a handle update so we can send updated duration times. Dont necessarily show time, just show an icon that indicates the effect, and when its about to finish, show a flashing effect on the icon)
-        // If Dust, push to HUD manager and let it apply camera blind effect. If Taroted, push to HUD manager and let it handle it (need effect update func), if Stun, push to HUD manager and let it handle visual stun part.
-        // Might not need the update part, its only if we want to indicate when things are close to losing active. Otherwise, we can just use the on delete handler
+        if (!IsOwner) return;
 
-        // Next, Check If We are Effect Sender. If Single Effect (damage), apply hit marker and dink if damage multiplier not 1 (headshot), etc, etc, similar to if effect is on us but this time if were sender
+        if (insertedEffect.TargetId == Id) {
+            magicianHud.HandleEffectAsTarget(insertedEffect);
+        }
+
+        else if (insertedEffect.SenderId == Id) {
+            magicianHud.HandleEffectAsSender(insertedEffect);
+        }
     }
 
     public void HandleMagicianEffectDelete(EventContext context, PlayerEffect deletedEffect)
     {
-        // Check If Effect Is On Us, if is, check effect type and push to HUD manager and let it remove the effect visually and the icon indicator
+        if (!IsOwner) return;
+
+        if (deletedEffect.TargetId == Id) {
+            magicianHud.HandleEffectRemoveAsTarget(deletedEffect);
+        }
+    }
+
+    public void HandleMagicianEffectUpdate(EventContext context, PlayerEffect oldEffect, PlayerEffect newEffect)
+    {
+        if (!IsOwner) return;
+
+        ApplicationInformation oldInfo = oldEffect.EffectInfo.ApplicationInformation;
+        ApplicationInformation newInfo = newEffect.EffectInfo.ApplicationInformation;
+
+        if (newEffect.EffectType == EffectType.Damage || newEffect.EffectType == EffectType.Dust || newEffect.EffectType == EffectType.Stunned)
+            return; 
+
+        if (newInfo.EndTime - newInfo.CurrentTime < 2.0 && oldInfo.EndTime - oldInfo.CurrentTime > 2.0)
+            magicianHud.TryHudIconFlash(newEffect);
     }
 
     public void OnTriggerEnter(Collider other)
@@ -425,5 +449,12 @@ public class MagicianController : MonoBehaviour
     public void Delete()
     {
         Destroy(gameObject);
+        if (GameManager.Conn?.Db == null) return;
+
+        GameManager.Conn.Db.Magician.OnUpdate -= HandleMagicianUpdate;
+        GameManager.Conn.Db.Magician.OnUpdate -= HandleHudUpdate;
+        GameManager.Conn.Db.PlayerEffects.OnInsert -= HandleMagicianEffectInsert;
+        GameManager.Conn.Db.PlayerEffects.OnUpdate -= HandleMagicianEffectUpdate;
+        GameManager.Conn.Db.PlayerEffects.OnDelete -= HandleMagicianEffectDelete;
     }
 }

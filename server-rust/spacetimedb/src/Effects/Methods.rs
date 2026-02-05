@@ -58,7 +58,7 @@ pub fn apply_tarot_effect_magician(_ctx: &ReducerContext, target: &mut Magician,
 }
 
 pub fn apply_invincible_effect_magician(_ctx: &ReducerContext, target: &mut Magician, _invincible_effect: &Option<InvincibleEffectInformation>) {
-    log::info!("Apply Invincible Effect Called");
+    log::info!("Apply Invincible Effect Called For Magician With ID {}", target.id);
     add_subscriber_to_permission(&mut target.permissions, "Invincibled", "InvincibleEffect"); // Invincible application - Client will read and update visually
 }
 
@@ -113,7 +113,7 @@ pub fn undo_tarot_effect_magician(_ctx: &ReducerContext, target: &mut Magician, 
 }
 
 pub fn undo_invincible_effect_magician(_ctx: &ReducerContext, target: &mut Magician, _invincible_effect: &Option<InvincibleEffectInformation>) {
-    log::info!("Undo Invincible Effect Called");
+    log::info!("Undo Invincible Effect Called For Magician With ID {}", target.id);
     remove_subscriber_from_permission(&mut target.permissions, "Invincibled", "InvincibleEffect"); // Invincible undo - Client will read and update visually
 }
 

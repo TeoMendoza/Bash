@@ -43,7 +43,7 @@ pub fn create_magician(config: MagicianConfig) -> Magician { // Creates new magi
             PermissionEntry { key: "Invincibled".to_string(), subscribers: Vec::new() },
         ],    
         timers: vec![
-            Timer { name: "Attack".to_string(), state: TimerState::Usable, cooldown_time: 0.7, use_finished_time: 0.7, current_time: 0.0 },
+            Timer { name: "Attack".to_string(), state: TimerState::Usable, cooldown_time: 0.5, use_finished_time: 0.5, current_time: 0.0 },
             Timer { name: "Reload".to_string(), state: TimerState::Usable, cooldown_time: 2.2, use_finished_time: 2.2, current_time: 0.0 },
             Timer { name: "Dust".to_string(), state: TimerState::Usable, cooldown_time: 10.0, use_finished_time: 2.4, current_time: 0.0 },
             Timer { name: "Cloak".to_string(), state: TimerState::Usable, cooldown_time: 20.0, use_finished_time: 1.5, current_time: 0.0 },
@@ -173,7 +173,7 @@ pub fn create_test_player(ctx: &ReducerContext, game_id: u32) { // Creates new t
             PermissionEntry { key: "Hypnosised".to_string(), subscribers: Vec::new() },
             PermissionEntry { key: "Invincibled".to_string(), subscribers: Vec::new() },
         ], 
-        timers: vec![ Timer { name: "Attack".to_string(), state: TimerState::Usable, cooldown_time: 0.7, use_finished_time: 0.7, current_time: 0.0 },
+        timers: vec![ Timer { name: "Attack".to_string(), state: TimerState::Usable, cooldown_time: 0.5, use_finished_time: 0.5, current_time: 0.0 },
             Timer { name: "Reload".to_string(), state: TimerState::Usable, cooldown_time: 2.2, use_finished_time: 2.2, current_time: 0.0 },
             Timer { name: "Dust".to_string(), state: TimerState::Usable, cooldown_time: 10.0, use_finished_time: 2.4, current_time: 0.0 },
             Timer { name: "Cloak".to_string(), state: TimerState::Usable, cooldown_time: 20.0, use_finished_time: 1.5, current_time: 0.0 },

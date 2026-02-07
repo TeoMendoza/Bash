@@ -60,6 +60,10 @@ PrefabInstance:
       propertyPath: PieceName
       value: Ramp2
       objectReference: {fileID: 0}
+    - target: {fileID: 7861349761673533369, guid: b3d0590656a04451da247dcf2541587e, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: -6202392741857895490, guid: 991e9dacefb594e26929b3cfae89dd08, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

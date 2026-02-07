@@ -15,16 +15,17 @@ pub struct Game {
     #[index(btree)] pub in_progress: bool,
     pub max_players: u32,
     pub current_players: u32,
+    pub scoreboard: Scoreboard
 }
 
-#[table(name = game_timers, scheduled(handle_game_end))]
+#[table(name = game_timers, public, scheduled(handle_game_end))]
 pub struct GameTimersTimer {
     #[primary_key] #[auto_inc] pub scheduled_id: u64,
     #[unique] pub game_id: u32,
     pub scheduled_at: ScheduleAt,
 }
 
-#[table(name = respawn_timers, scheduled(handle_respawn))]
+#[table(name = respawn_timers, public, scheduled(handle_respawn))]
 pub struct RespawnTimersTimer {
     #[primary_key] #[auto_inc] pub scheduled_id: u64,
     #[index(btree)] pub game_id: u32,

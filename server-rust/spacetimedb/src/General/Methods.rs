@@ -45,19 +45,27 @@ pub fn cleanup_on_game_end(ctx: &ReducerContext, game_id: u32) { // Cleans up da
     ctx.db.player_effects_table_timer().game_id().delete(game_id);
 }
 
-pub fn decrement_player_count_of_game(ctx: &ReducerContext, game_id: u32) { // Decrements games current players and force ends game if 0 (force ends WIP)
+pub fn remove_player_info_from_game(ctx: &ReducerContext, game_id: u32) { // Decrements games current players and force ends game if 0 (force ends WIP)
 
     let game_option = ctx.db.game().id().find(game_id);
     if let Some(mut game) = game_option {
         if game.current_players > 0 {
             game.current_players -= 1;
-            ctx.db.game().id().update(game);
         }
+
+        let scoreboard_players = &mut game.scoreboard.players;
+        for index in 0..scoreboard_players.len() {
+            if scoreboard_players[index].identity == ctx.sender {
+                scoreboard_players.swap_remove(index);
+            }
+        }
+
+        ctx.db.game().id().update(game);
     }
 }
 
 pub fn create_game(ctx: &ReducerContext) -> Game { // Creates and inserts new game with scheduled reducers configured - Test player parameter adds fake player (parameter WIP)
-    let created_game = ctx.db.game().insert(Game { id: 0, max_players: 12, current_players: 0, in_progress: false });
+    let created_game = ctx.db.game().insert(Game { id: 0, max_players: 12, current_players: 0, in_progress: false, scoreboard: Scoreboard { players: Vec::new() } });
     let tick_millis: u64 = 1000 / 60;
     let tick_rate: f32 = 1.0 / 60.0;
 

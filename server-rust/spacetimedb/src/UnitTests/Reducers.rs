@@ -20,6 +20,7 @@ pub fn test_join_and_start_game_single_player(ctx: &ReducerContext) {
                 max_players: 12,
                 current_players: 0,
                 in_progress: false,
+                scoreboard: Scoreboard { players: Vec::new() }
             });
 
             let tick_millis: u64 = 1000 / 60;

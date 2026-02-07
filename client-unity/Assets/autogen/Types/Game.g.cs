@@ -21,22 +21,27 @@ namespace SpacetimeDB.Types
         public uint MaxPlayers;
         [DataMember(Name = "current_players")]
         public uint CurrentPlayers;
+        [DataMember(Name = "scoreboard")]
+        public Scoreboard Scoreboard;
 
         public Game(
             uint Id,
             bool InProgress,
             uint MaxPlayers,
-            uint CurrentPlayers
+            uint CurrentPlayers,
+            Scoreboard Scoreboard
         )
         {
             this.Id = Id;
             this.InProgress = InProgress;
             this.MaxPlayers = MaxPlayers;
             this.CurrentPlayers = CurrentPlayers;
+            this.Scoreboard = Scoreboard;
         }
 
         public Game()
         {
+            this.Scoreboard = new();
         }
     }
 }

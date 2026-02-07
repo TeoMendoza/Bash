@@ -71,7 +71,7 @@ public class MagicianController : MonoBehaviour
 
         if (IsOwner)
         {
-            mainCamera = FindFirstObjectByType<CinemachineBrain>()?.OutputCamera ?? throw new System.Exception("No Main Camera Brain OutputCamera");
+            mainCamera = FindFirstObjectByType<CinemachineBrain>()?.OutputCamera ?? throw new Exception("No Main Camera Brain OutputCamera");
 
             if (crosshair != null) {
                 crosshair.gameObject.SetActive(true);
@@ -82,6 +82,10 @@ public class MagicianController : MonoBehaviour
                 magicianHud.gameObject.SetActive(true);
                 magicianHud.HudCanvas.worldCamera = mainCamera;
             }     
+        }
+
+        foreach (PlayerEffect Effect in GameManager.Conn.Db.PlayerEffects.TargetId.Filter(Id)) {
+            if (Effect.EffectType is EffectType.Invincible) magicianHud.HandleEffectAsTarget(Effect);
         }
 
         GameManager.Conn.Db.Magician.OnUpdate += HandleMagicianUpdate;

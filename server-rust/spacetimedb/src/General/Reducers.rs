@@ -24,7 +24,7 @@ pub fn connect(ctx: &ReducerContext) // Adds player to logged_in_players and out
     } 
 
     else {
-        ctx.db.logged_in_players().insert(Player {id: 0, identity: ctx.sender, name: "Test Player".to_string() });
+        ctx.db.logged_in_players().insert(Player {id: 0, identity: ctx.sender, name: "Player".to_string() });
     }
 
     log::info!("{} just connected.", ctx.sender);
@@ -42,12 +42,12 @@ pub fn disconnect(ctx: &ReducerContext) // Cleans up data related to player - Ca
 
     if let Some(mut magician) = magician_option { // Case: in match
         cleanup_on_disconnect_or_death(ctx, &mut magician);
-        decrement_player_count_of_game(ctx, magician.game_id);
+        remove_player_info_from_game(ctx, magician.game_id);
         ctx.db.magician().identity().delete(player.identity);
     }
 
     else if let Some(respawn_timer) = respawn_timer_option { // Case: dead & respawning
-        decrement_player_count_of_game(ctx, respawn_timer.game_id);
+        remove_player_info_from_game(ctx, respawn_timer.game_id);
         ctx.db.respawn_timers().scheduled_id().delete(respawn_timer.scheduled_id); 
     }
     
@@ -62,6 +62,7 @@ pub fn try_join_game(ctx: &ReducerContext) // Adds player to first unstarted gam
 {
     let player_option = ctx.db.logged_in_players().identity().find(ctx.sender);
     if let Some(player) = player_option {
+        let scoreboard_player = ScoreboardPlayer { identity: ctx.sender, name: player.name.clone(), score: 0 };
         let mut game: Game = match ctx.db.game().in_progress().filter(false).next() { // Finds unstarted game or creates new if none
             Some(mut existing_game) => { 
                 existing_game.current_players += 1;
@@ -74,9 +75,14 @@ pub fn try_join_game(ctx: &ReducerContext) // Adds player to first unstarted gam
             }
         };
 
-        if game.current_players == game.max_players && game.in_progress != true { // Starts game if full - No new players can join, players can leave and rejoin (rejoin WIP)
+        game.scoreboard.players.push(scoreboard_player);
+        if game.current_players == 1 && game.in_progress != true { // Starts game if full - No new players can join, players can leave and rejoin (rejoin WIP)
             game.in_progress = true;
-            let end_time = ctx.timestamp.checked_add(TimeDuration::from_micros(600_000_000)).expect("Match End Time Timestamp Overflow"); // 10 Minutes
+            for scoreboard_player in game.scoreboard.players.iter_mut() {
+                scoreboard_player.score = 0;
+            }
+
+            let end_time = ctx.timestamp.checked_add(TimeDuration::from_micros(900_000_000)).expect("Match End Time Timestamp Overflow"); // 15 Minutes
             let game_end_timer = GameTimersTimer {scheduled_id: 0, scheduled_at: ScheduleAt::Time(end_time), game_id: game.id};
             ctx.db.game_timers().insert(game_end_timer);
         }
@@ -102,12 +108,12 @@ pub fn try_leave_game(ctx: &ReducerContext) // Cleans up data related to player 
     if let Some(player) = player_option {
         if let Some(mut magician) = magician_option {
             cleanup_on_disconnect_or_death(ctx, &mut magician);
-            decrement_player_count_of_game(ctx, magician.game_id);
+            remove_player_info_from_game(ctx, magician.game_id);
             ctx.db.magician().identity().delete(player.identity);
         }
 
         else if let Some(respawn_timer) = respawn_timer_option {
-            decrement_player_count_of_game(ctx, respawn_timer.game_id);
+            remove_player_info_from_game(ctx, respawn_timer.game_id);
             ctx.db.respawn_timers().scheduled_id().delete(respawn_timer.scheduled_id); 
         }
     }

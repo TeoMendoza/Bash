@@ -1,24 +1,35 @@
 using UnityEngine;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using SpacetimeDB;
 using SpacetimeDB.Types;
 using System.Linq;
-using Unity.VisualScripting;
-
+using TMPro;
+using UnityEngine.SocialPlatforms.Impl;
 #nullable enable
 public class MatchManager : MonoBehaviour
 {
+    [SerializeField] Canvas RespawnCanvas;
+    [SerializeField] TextMeshProUGUI RespawnTime;
+
+    public Timestamp RespawnAtTimestamp;
+    private bool HasRespawnAt;
+
+    [SerializeField] Canvas GameInfoCanvas;
+    [SerializeField] TextMeshProUGUI GameTime;
+    [SerializeField] List<TextMeshProUGUI> ScoreboardSlots;
+    public Timestamp GameEndTimestamp;
+    public bool Started = false;
+   
     public static MatchManager Instance { get; private set; }
+    public bool Initalized = false;
     public uint? GameId = null;
     public DbConnection Conn;
+
     public Dictionary<Identity, MagicianController> Players = new();
     public MagicianController MagicianPrefab;
     public Dictionary<uint, MapPiece> MapPieces = new();
     public List<MapPiece> MapPrefabs;
-    public bool Initalized = false;
-    public bool Started = false;
     
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -36,7 +47,41 @@ public class MatchManager : MonoBehaviour
             Conn.Reducers.TryLeaveGame();
             CleanupMatchManager();
         }
-            
+
+        if (HasRespawnAt) {
+            Timestamp NowTimestamp = (Timestamp)DateTimeOffset.UtcNow; 
+            long RemainingMicroseconds = RespawnAtTimestamp.TimeDurationSince(NowTimestamp).Microseconds; 
+
+            if (RemainingMicroseconds <= 0) { 
+                RespawnTime.text = ""; return; 
+            } 
+
+            double RemainingSeconds = RemainingMicroseconds / 1_000_000.0; 
+            int RemainingSecondsCeil = (int)Math.Ceiling(RemainingSeconds); 
+            RespawnTime.text = RemainingSecondsCeil.ToString();
+        }
+
+        if (Started)
+        {
+            Timestamp NowTimestamp = (Timestamp)DateTimeOffset.UtcNow;
+            long RemainingMicroseconds = GameEndTimestamp.TimeDurationSince(NowTimestamp).Microseconds;
+
+            if (RemainingMicroseconds <= 0)
+            {
+                GameTime.text = "";
+                return;
+            }
+
+            double RemainingSeconds = RemainingMicroseconds / 1_000_000.0;
+            int RemainingSecondsCeil = (int)Math.Ceiling(RemainingSeconds);
+
+            int RemainingMinutes = RemainingSecondsCeil / 60;
+            int RemainingSecondsRemainder = RemainingSecondsCeil % 60;
+            string SecondsBuffer = RemainingSecondsRemainder < 10 ? "0" : "";
+
+            GameTime.text = $"{RemainingMinutes}:{SecondsBuffer}{RemainingSecondsRemainder}";
+        }
+
     }
 
     public void InitializeMatchManager()
@@ -44,8 +89,14 @@ public class MatchManager : MonoBehaviour
         Conn = GameManager.Conn;
         Conn.Db.Magician.OnInsert += AddNewCharacter;
         Conn.Db.Magician.OnDelete += RemoveCharacter;
-        Conn.Db.Game.OnUpdate += GameStart;
+
+        Conn.Db.Game.OnUpdate += UpdateScoreboard;
+        Conn.Db.RespawnTimers.OnInsert += OnInsertRespawnTimer;
+        Conn.Db.RespawnTimers.OnDelete += OnDeleteRespawnTimer;
+
+        Conn.Db.GameTimers.OnInsert += OnInsertGameTimer;
         Conn.Db.Game.OnDelete += EndGame;
+
         Initalized = true;
     }
 
@@ -83,6 +134,35 @@ public class MatchManager : MonoBehaviour
             Prefab.Initialize(MapPiece);
             MapPieces.Add((uint)MapPiece.Id, Prefab);
         }
+
+        if (GameId is not null) {
+            Game? Game = Conn.Db.Game.Id.Find((uint)GameId);
+            if (Game is not null && Game.InProgress == true) { Started = true; }
+
+            if (Started) {
+
+                List<ScoreboardPlayer> Scores = Game!.Scoreboard.Players.OrderByDescending(s => s.Score).ToList();
+                for (int index = 0; index <= 2; index++) {
+                    if (index < Scores.Count) {
+                        string name = Scores[index].Name;
+                        ulong score = Scores[index].Score;
+                        ScoreboardSlots[index].text = $"{index + 1}. {name} - {score}";         
+                    }
+                }
+
+                GameTimersTimer? GameTimer = Conn.Db.GameTimers.GameId.Find((uint)GameId);
+                if (GameTimer is not null) {
+                    if (GameTimer.GameId == GameId) {
+                        if (GameTimer.ScheduledAt is ScheduleAt.Time(var Timestamp)) {
+                            GameEndTimestamp = Timestamp;
+                        }
+                        GameTime.text = "15:00";
+                    } 
+                }
+                
+                GameInfoCanvas.gameObject.SetActive(true);
+            }
+        }
     }
 
     public void AddNewCharacter(EventContext context, Magician Character)
@@ -114,6 +194,26 @@ public class MatchManager : MonoBehaviour
         }
     }
 
+    public void OnInsertRespawnTimer(EventContext context, RespawnTimersTimer insertedTimer)
+    {
+        if (insertedTimer.Identity != GameManager.LocalIdentity) return;
+
+        RespawnCanvas.gameObject.SetActive(true);
+        RespawnTime.text = "5";
+
+        if (insertedTimer.ScheduledAt is ScheduleAt.Time(var RespawnTimestamp)) {
+            RespawnAtTimestamp = RespawnTimestamp;
+            HasRespawnAt = true;
+        }      
+    }
+
+    public void OnDeleteRespawnTimer(EventContext context, RespawnTimersTimer deletedTimer)
+    {
+        if (deletedTimer.Identity != GameManager.LocalIdentity) return;
+        RespawnCanvas.gameObject.SetActive(false);
+        HasRespawnAt = false;
+    }
+
     public void EndGame(EventContext context, Game EndedGame)
     {
         if (EndedGame.Id == GameId) {
@@ -121,11 +221,32 @@ public class MatchManager : MonoBehaviour
         }
     }
 
-    public void GameStart(EventContext context, Game oldGame, Game newGame)
+    public void UpdateScoreboard(EventContext context, Game oldGame, Game newGame)
     {
-        if (newGame.Id == GameId && newGame.InProgress is true && oldGame.InProgress is false) {
+        if (newGame.Id == GameId && (Started || oldGame.InProgress == false && newGame.InProgress == true)) {
             Started = true;
-        }     
+            List<ScoreboardPlayer> Scores = newGame.Scoreboard.Players.OrderByDescending(s => s.Score).ToList();
+            for (int index = 0; index <= 2; index++) {
+                if (index < Scores.Count) {
+                    string name = Scores[index].Name;
+                    ulong score = Scores[index].Score;
+                    ScoreboardSlots[index].text = $"{index + 1}. {name} - {score}";         
+                }
+            }
+        }
+
+        GameInfoCanvas.gameObject.SetActive(true);
+    }
+
+    public void OnInsertGameTimer(EventContext context, GameTimersTimer insertedTimer)
+    {
+        if (insertedTimer.GameId == GameId) {
+            Started = true;
+            if (insertedTimer.ScheduledAt is ScheduleAt.Time(var Timestamp)) {
+                GameEndTimestamp = Timestamp;
+            }
+            GameTime.text = "15:00";
+        } 
     }
 
     public void CleanupMatchManager()
@@ -146,8 +267,7 @@ public class MatchManager : MonoBehaviour
         for (int Index = 0; Index < MapPieceIds.Count; Index++)
         {
             var MapPieceId = MapPieceIds[Index];
-            if (MapPieces.TryGetValue(MapPieceId, out var Prefab) && Prefab != null)
-            {
+            if (MapPieces.TryGetValue(MapPieceId, out var Prefab) && Prefab != null) {
                 Prefab.Delete();
             }
             MapPieces.Remove(MapPieceId);
@@ -155,6 +275,10 @@ public class MatchManager : MonoBehaviour
 
         GameId = null;
         Started = false;
+        HasRespawnAt = false;
+    
+        GameInfoCanvas.gameObject.SetActive(false);
+        RespawnCanvas.gameObject.SetActive(false);
 
         // Send Client To Lobby Screen Once Created
     }

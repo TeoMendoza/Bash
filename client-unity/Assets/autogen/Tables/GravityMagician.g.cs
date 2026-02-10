@@ -46,4 +46,34 @@ namespace SpacetimeDB.Types
 
         public readonly GravityMagicianHandle GravityMagician;
     }
+
+    public sealed class GravityMagicianCols
+    {
+        public global::SpacetimeDB.Col<GravityTimerMagician, ulong> ScheduledId { get; }
+        public global::SpacetimeDB.Col<GravityTimerMagician, SpacetimeDB.ScheduleAt> ScheduledAt { get; }
+        public global::SpacetimeDB.Col<GravityTimerMagician, float> TickRate { get; }
+        public global::SpacetimeDB.Col<GravityTimerMagician, float> Gravity { get; }
+        public global::SpacetimeDB.Col<GravityTimerMagician, uint> GameId { get; }
+
+        public GravityMagicianCols(string tableName)
+        {
+            ScheduledId = new global::SpacetimeDB.Col<GravityTimerMagician, ulong>(tableName, "scheduled_id");
+            ScheduledAt = new global::SpacetimeDB.Col<GravityTimerMagician, SpacetimeDB.ScheduleAt>(tableName, "scheduled_at");
+            TickRate = new global::SpacetimeDB.Col<GravityTimerMagician, float>(tableName, "tick_rate");
+            Gravity = new global::SpacetimeDB.Col<GravityTimerMagician, float>(tableName, "gravity");
+            GameId = new global::SpacetimeDB.Col<GravityTimerMagician, uint>(tableName, "game_id");
+        }
+    }
+
+    public sealed class GravityMagicianIxCols
+    {
+        public global::SpacetimeDB.IxCol<GravityTimerMagician, ulong> ScheduledId { get; }
+        public global::SpacetimeDB.IxCol<GravityTimerMagician, uint> GameId { get; }
+
+        public GravityMagicianIxCols(string tableName)
+        {
+            ScheduledId = new global::SpacetimeDB.IxCol<GravityTimerMagician, ulong>(tableName, "scheduled_id");
+            GameId = new global::SpacetimeDB.IxCol<GravityTimerMagician, uint>(tableName, "game_id");
+        }
+    }
 }

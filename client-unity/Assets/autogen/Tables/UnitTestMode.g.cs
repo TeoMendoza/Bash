@@ -36,4 +36,26 @@ namespace SpacetimeDB.Types
 
         public readonly UnitTestModeHandle UnitTestMode;
     }
+
+    public sealed class UnitTestModeCols
+    {
+        public global::SpacetimeDB.Col<UnitTestMode, uint> Id { get; }
+        public global::SpacetimeDB.Col<UnitTestMode, bool> Enabled { get; }
+
+        public UnitTestModeCols(string tableName)
+        {
+            Id = new global::SpacetimeDB.Col<UnitTestMode, uint>(tableName, "id");
+            Enabled = new global::SpacetimeDB.Col<UnitTestMode, bool>(tableName, "enabled");
+        }
+    }
+
+    public sealed class UnitTestModeIxCols
+    {
+        public global::SpacetimeDB.IxCol<UnitTestMode, uint> Id { get; }
+
+        public UnitTestModeIxCols(string tableName)
+        {
+            Id = new global::SpacetimeDB.IxCol<UnitTestMode, uint>(tableName, "id");
+        }
+    }
 }

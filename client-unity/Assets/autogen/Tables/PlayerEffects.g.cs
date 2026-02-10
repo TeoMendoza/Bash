@@ -86,4 +86,42 @@ namespace SpacetimeDB.Types
 
         public readonly PlayerEffectsHandle PlayerEffects;
     }
+
+    public sealed class PlayerEffectsCols
+    {
+        public global::SpacetimeDB.Col<PlayerEffect, ulong> Id { get; }
+        public global::SpacetimeDB.Col<PlayerEffect, ulong> TargetId { get; }
+        public global::SpacetimeDB.Col<PlayerEffect, ulong> SenderId { get; }
+        public global::SpacetimeDB.Col<PlayerEffect, uint> GameId { get; }
+        public global::SpacetimeDB.Col<PlayerEffect, Effect> EffectInfo { get; }
+        public global::SpacetimeDB.Col<PlayerEffect, EffectType> EffectType { get; }
+
+        public PlayerEffectsCols(string tableName)
+        {
+            Id = new global::SpacetimeDB.Col<PlayerEffect, ulong>(tableName, "id");
+            TargetId = new global::SpacetimeDB.Col<PlayerEffect, ulong>(tableName, "target_id");
+            SenderId = new global::SpacetimeDB.Col<PlayerEffect, ulong>(tableName, "sender_id");
+            GameId = new global::SpacetimeDB.Col<PlayerEffect, uint>(tableName, "game_id");
+            EffectInfo = new global::SpacetimeDB.Col<PlayerEffect, Effect>(tableName, "effect_info");
+            EffectType = new global::SpacetimeDB.Col<PlayerEffect, EffectType>(tableName, "effect_type");
+        }
+    }
+
+    public sealed class PlayerEffectsIxCols
+    {
+        public global::SpacetimeDB.IxCol<PlayerEffect, ulong> Id { get; }
+        public global::SpacetimeDB.IxCol<PlayerEffect, ulong> TargetId { get; }
+        public global::SpacetimeDB.IxCol<PlayerEffect, ulong> SenderId { get; }
+        public global::SpacetimeDB.IxCol<PlayerEffect, uint> GameId { get; }
+        public global::SpacetimeDB.IxCol<PlayerEffect, EffectType> EffectType { get; }
+
+        public PlayerEffectsIxCols(string tableName)
+        {
+            Id = new global::SpacetimeDB.IxCol<PlayerEffect, ulong>(tableName, "id");
+            TargetId = new global::SpacetimeDB.IxCol<PlayerEffect, ulong>(tableName, "target_id");
+            SenderId = new global::SpacetimeDB.IxCol<PlayerEffect, ulong>(tableName, "sender_id");
+            GameId = new global::SpacetimeDB.IxCol<PlayerEffect, uint>(tableName, "game_id");
+            EffectType = new global::SpacetimeDB.IxCol<PlayerEffect, EffectType>(tableName, "effect_type");
+        }
+    }
 }

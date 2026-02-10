@@ -46,4 +46,30 @@ namespace SpacetimeDB.Types
 
         public readonly GameTimersHandle GameTimers;
     }
+
+    public sealed class GameTimersCols
+    {
+        public global::SpacetimeDB.Col<GameTimersTimer, ulong> ScheduledId { get; }
+        public global::SpacetimeDB.Col<GameTimersTimer, uint> GameId { get; }
+        public global::SpacetimeDB.Col<GameTimersTimer, SpacetimeDB.ScheduleAt> ScheduledAt { get; }
+
+        public GameTimersCols(string tableName)
+        {
+            ScheduledId = new global::SpacetimeDB.Col<GameTimersTimer, ulong>(tableName, "scheduled_id");
+            GameId = new global::SpacetimeDB.Col<GameTimersTimer, uint>(tableName, "game_id");
+            ScheduledAt = new global::SpacetimeDB.Col<GameTimersTimer, SpacetimeDB.ScheduleAt>(tableName, "scheduled_at");
+        }
+    }
+
+    public sealed class GameTimersIxCols
+    {
+        public global::SpacetimeDB.IxCol<GameTimersTimer, ulong> ScheduledId { get; }
+        public global::SpacetimeDB.IxCol<GameTimersTimer, uint> GameId { get; }
+
+        public GameTimersIxCols(string tableName)
+        {
+            ScheduledId = new global::SpacetimeDB.IxCol<GameTimersTimer, ulong>(tableName, "scheduled_id");
+            GameId = new global::SpacetimeDB.IxCol<GameTimersTimer, uint>(tableName, "game_id");
+        }
+    }
 }

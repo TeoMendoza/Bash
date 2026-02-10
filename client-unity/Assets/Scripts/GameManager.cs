@@ -14,12 +14,14 @@ public class GameManager : MonoBehaviour
     public static event Action OnSubscriptionApplied;
 
 	public static GameManager Instance { get; private set; }
+    public static Player Player { get; private set; }
     public static Identity LocalIdentity { get; private set; }
     public static DbConnection Conn { get; private set; }
+    public static int PlayerCount { get; set; } = 0;
     
     private void Start()
     {
-        PlayerPrefs.DeleteAll();
+        //PlayerPrefs.DeleteAll();
         Instance = this;
         Application.targetFrameRate = 60;
 
@@ -42,7 +44,6 @@ public class GameManager : MonoBehaviour
         // Building the connection will establish a connection to the SpacetimeDB
         // server.
         Conn = builder.Build();
-        MatchManager.Instance.InitializeMatchManager();
     }
 
     // Called when we connect to SpacetimeDB and receive our client identity
@@ -51,14 +52,15 @@ public class GameManager : MonoBehaviour
         Debug.Log("Connected.");
         AuthToken.SaveToken(token);
         LocalIdentity = identity;
-
-        
         OnConnected?.Invoke();
 
         // Request all tables
         Conn.SubscriptionBuilder()
             .OnApplied(HandleSubscriptionApplied)
             .SubscribeToAllTables();
+
+        Conn.Db.LoggedInPlayers.OnInsert += HandlePlayerLoggedIn;
+        Conn.Db.LoggedOutPlayers.OnInsert += HandlePlayerLoggedOut;
     }
 
     void HandleConnectError(Exception ex)
@@ -90,6 +92,23 @@ public class GameManager : MonoBehaviour
     {
         Conn.Disconnect();
         Conn = null;
+        Player = null;
+        PlayerCount -= 1;
+    }
+
+    public void HandlePlayerLoggedIn(EventContext ctx, Player insertedPlayer)
+    {
+        if (insertedPlayer.Identity == LocalIdentity) {
+            Player = insertedPlayer;
+            MatchManager.Instance.InitializeMatchManager(Player);
+        }
+
+        PlayerCount += 1;
+    }
+
+    public void HandlePlayerLoggedOut(EventContext ctx, Player disconnectedPlayer)
+    {
+        PlayerCount -= 1;
     }
 }
 

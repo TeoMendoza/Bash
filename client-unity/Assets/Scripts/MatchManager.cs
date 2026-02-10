@@ -5,12 +5,18 @@ using SpacetimeDB;
 using SpacetimeDB.Types;
 using System.Linq;
 using TMPro;
-using UnityEngine.SocialPlatforms.Impl;
 #nullable enable
 public class MatchManager : MonoBehaviour
 {
+    [SerializeField] GameObject InGameUI;
+    [SerializeField] GameObject InLobbyUI;
+    [SerializeField] TextMeshProUGUI PlayerName;
+    [SerializeField] CursorLocker CursorLocker;
     [SerializeField] Canvas RespawnCanvas;
     [SerializeField] TextMeshProUGUI RespawnTime;
+
+    [SerializeField] Canvas InGameMenuCanvas;
+    bool InGameMenuActive = false;
 
     public Timestamp RespawnAtTimestamp;
     private bool HasRespawnAt;
@@ -24,10 +30,12 @@ public class MatchManager : MonoBehaviour
     public static MatchManager Instance { get; private set; }
     public bool Initalized = false;
     public uint? GameId = null;
+    public Player Player;
     public DbConnection Conn;
 
     public Dictionary<Identity, MagicianController> Players = new();
     public MagicianController MagicianPrefab;
+    private MagicianController? LocalMagician = null;
     public Dictionary<uint, MapPiece> MapPieces = new();
     public List<MapPiece> MapPrefabs;
     
@@ -40,14 +48,27 @@ public class MatchManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Initalized && GameId is null && Input.GetKeyDown(KeyCode.P))
-            Conn.Reducers.TryJoinGame();
-        
-        if (Initalized && GameId is not null && Input.GetKeyDown(KeyCode.P)) {
-            Conn.Reducers.TryLeaveGame();
-            CleanupMatchManager();
+        if (Initalized && GameId is not null && Input.GetKeyDown(KeyCode.Escape) && InGameMenuActive == false)
+        {
+            CursorLocker.SetUiOpen(true);
+            InGameMenuCanvas.gameObject.SetActive(true);
+            InGameMenuActive = true;
+
+            if (LocalMagician != null)
+                LocalMagician.DisableInput();
         }
 
+        else if (Initalized && GameId is not null && Input.GetKeyDown(KeyCode.Escape) && InGameMenuActive == true)
+        {
+            CursorLocker.SetUiOpen(false);
+            InGameMenuCanvas.gameObject.SetActive(false);
+            InGameMenuActive = false;
+
+            if (LocalMagician != null)
+                LocalMagician.EnableInput();
+        }
+            
+        
         if (HasRespawnAt) {
             Timestamp NowTimestamp = (Timestamp)DateTimeOffset.UtcNow; 
             long RemainingMicroseconds = RespawnAtTimestamp.TimeDurationSince(NowTimestamp).Microseconds; 
@@ -84,9 +105,25 @@ public class MatchManager : MonoBehaviour
 
     }
 
-    public void InitializeMatchManager()
+    public void LeaveGame()
+    {
+        if (Initalized && GameId is not null) {
+            Conn.Reducers.TryLeaveGame();
+            CleanupMatchManager();
+        }
+    }
+
+    public void JoinGame()
+    {
+        if (Initalized && GameId is null)
+            Conn.Reducers.TryJoinGame();
+    }
+
+    public void InitializeMatchManager(Player LocalPlayer)
     {
         Conn = GameManager.Conn;
+        Player = LocalPlayer;
+        PlayerName.text = LocalPlayer.Name;
         Conn.Db.Magician.OnInsert += AddNewCharacter;
         Conn.Db.Magician.OnDelete += RemoveCharacter;
 
@@ -96,7 +133,6 @@ public class MatchManager : MonoBehaviour
 
         Conn.Db.GameTimers.OnInsert += OnInsertGameTimer;
         Conn.Db.Game.OnDelete += EndGame;
-
         Initalized = true;
     }
 
@@ -109,6 +145,9 @@ public class MatchManager : MonoBehaviour
                 var prefab = Instantiate(MagicianPrefab);
                 prefab.Initalize(Character);
                 Players.Add(Character.Identity, prefab);
+
+                if (Character.Identity == GameManager.LocalIdentity)
+                    LocalMagician = prefab;
             }
         }
 
@@ -163,6 +202,10 @@ public class MatchManager : MonoBehaviour
                 GameInfoCanvas.gameObject.SetActive(true);
             }
         }
+
+        InGameUI.SetActive(true);
+        InLobbyUI.SetActive(false);
+        CursorLocker.SetUiOpen(false);
     }
 
     public void AddNewCharacter(EventContext context, Magician Character)
@@ -178,6 +221,9 @@ public class MatchManager : MonoBehaviour
             var prefab = Instantiate(MagicianPrefab);
             prefab.Initalize(Character);     
             Players.Add(Character.Identity, prefab);
+
+            if (Character.Identity == GameManager.LocalIdentity)
+                LocalMagician = prefab;
         }
             
     }
@@ -233,9 +279,10 @@ public class MatchManager : MonoBehaviour
                     ScoreboardSlots[index].text = $"{index + 1}. {name} - {score}";         
                 }
             }
+            GameInfoCanvas.gameObject.SetActive(true);
         }
 
-        GameInfoCanvas.gameObject.SetActive(true);
+        
     }
 
     public void OnInsertGameTimer(EventContext context, GameTimersTimer insertedTimer)
@@ -276,10 +323,14 @@ public class MatchManager : MonoBehaviour
         GameId = null;
         Started = false;
         HasRespawnAt = false;
+        LocalMagician = null;
     
         GameInfoCanvas.gameObject.SetActive(false);
         RespawnCanvas.gameObject.SetActive(false);
+        InGameMenuCanvas.gameObject.SetActive(false);
 
-        // Send Client To Lobby Screen Once Created
+        InGameUI.SetActive(false);
+        InLobbyUI.SetActive(true);
+        CursorLocker.SetUiOpen(true);
     }
 }

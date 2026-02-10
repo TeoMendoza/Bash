@@ -46,4 +46,32 @@ namespace SpacetimeDB.Types
 
         public readonly MoveAllMagiciansHandle MoveAllMagicians;
     }
+
+    public sealed class MoveAllMagiciansCols
+    {
+        public global::SpacetimeDB.Col<MoveAllMagiciansTimer, ulong> ScheduledId { get; }
+        public global::SpacetimeDB.Col<MoveAllMagiciansTimer, SpacetimeDB.ScheduleAt> ScheduledAt { get; }
+        public global::SpacetimeDB.Col<MoveAllMagiciansTimer, float> TickRate { get; }
+        public global::SpacetimeDB.Col<MoveAllMagiciansTimer, uint> GameId { get; }
+
+        public MoveAllMagiciansCols(string tableName)
+        {
+            ScheduledId = new global::SpacetimeDB.Col<MoveAllMagiciansTimer, ulong>(tableName, "scheduled_id");
+            ScheduledAt = new global::SpacetimeDB.Col<MoveAllMagiciansTimer, SpacetimeDB.ScheduleAt>(tableName, "scheduled_at");
+            TickRate = new global::SpacetimeDB.Col<MoveAllMagiciansTimer, float>(tableName, "tick_rate");
+            GameId = new global::SpacetimeDB.Col<MoveAllMagiciansTimer, uint>(tableName, "game_id");
+        }
+    }
+
+    public sealed class MoveAllMagiciansIxCols
+    {
+        public global::SpacetimeDB.IxCol<MoveAllMagiciansTimer, ulong> ScheduledId { get; }
+        public global::SpacetimeDB.IxCol<MoveAllMagiciansTimer, uint> GameId { get; }
+
+        public MoveAllMagiciansIxCols(string tableName)
+        {
+            ScheduledId = new global::SpacetimeDB.IxCol<MoveAllMagiciansTimer, ulong>(tableName, "scheduled_id");
+            GameId = new global::SpacetimeDB.IxCol<MoveAllMagiciansTimer, uint>(tableName, "game_id");
+        }
+    }
 }

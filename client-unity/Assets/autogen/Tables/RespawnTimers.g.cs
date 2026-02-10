@@ -56,4 +56,34 @@ namespace SpacetimeDB.Types
 
         public readonly RespawnTimersHandle RespawnTimers;
     }
+
+    public sealed class RespawnTimersCols
+    {
+        public global::SpacetimeDB.Col<RespawnTimersTimer, ulong> ScheduledId { get; }
+        public global::SpacetimeDB.Col<RespawnTimersTimer, uint> GameId { get; }
+        public global::SpacetimeDB.Col<RespawnTimersTimer, SpacetimeDB.Identity> Identity { get; }
+        public global::SpacetimeDB.Col<RespawnTimersTimer, SpacetimeDB.ScheduleAt> ScheduledAt { get; }
+
+        public RespawnTimersCols(string tableName)
+        {
+            ScheduledId = new global::SpacetimeDB.Col<RespawnTimersTimer, ulong>(tableName, "scheduled_id");
+            GameId = new global::SpacetimeDB.Col<RespawnTimersTimer, uint>(tableName, "game_id");
+            Identity = new global::SpacetimeDB.Col<RespawnTimersTimer, SpacetimeDB.Identity>(tableName, "identity");
+            ScheduledAt = new global::SpacetimeDB.Col<RespawnTimersTimer, SpacetimeDB.ScheduleAt>(tableName, "scheduled_at");
+        }
+    }
+
+    public sealed class RespawnTimersIxCols
+    {
+        public global::SpacetimeDB.IxCol<RespawnTimersTimer, ulong> ScheduledId { get; }
+        public global::SpacetimeDB.IxCol<RespawnTimersTimer, uint> GameId { get; }
+        public global::SpacetimeDB.IxCol<RespawnTimersTimer, SpacetimeDB.Identity> Identity { get; }
+
+        public RespawnTimersIxCols(string tableName)
+        {
+            ScheduledId = new global::SpacetimeDB.IxCol<RespawnTimersTimer, ulong>(tableName, "scheduled_id");
+            GameId = new global::SpacetimeDB.IxCol<RespawnTimersTimer, uint>(tableName, "game_id");
+            Identity = new global::SpacetimeDB.IxCol<RespawnTimersTimer, SpacetimeDB.Identity>(tableName, "identity");
+        }
+    }
 }

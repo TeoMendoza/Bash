@@ -2,10 +2,8 @@ using SpacetimeDB;
 using UnityEngine;
 using SpacetimeDB.Types;
 using Unity.Cinemachine;
-using Unity.VisualScripting;
-using NUnit.Framework;
 using System;
-using UnityEngine.AI;
+
 
 public class MagicianController : MonoBehaviour
 {
@@ -50,6 +48,18 @@ public class MagicianController : MonoBehaviour
     float TargetHorizontalSpeed;
     readonly float SpeedBlendTime = 0.15f;
 
+    public bool InputEnabled = true;
+
+    public void DisableInput()
+    {
+        InputEnabled = false;
+    }
+
+    public void EnableInput()
+    {
+        InputEnabled = true;
+    }
+    
     public void Initalize(Magician Character)
     {
         Magician = Character;
@@ -97,7 +107,7 @@ public class MagicianController : MonoBehaviour
 
     void Update()
     {
-        if (!IsOwner) return;
+        if (!IsOwner || InputEnabled == false) return;
 
         MovementRequest CurrentRequest = BuildMovementRequest();
         bool ForceSendThisFrame = CurrentRequest.Jump;

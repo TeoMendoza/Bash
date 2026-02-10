@@ -46,4 +46,32 @@ namespace SpacetimeDB.Types
 
         public readonly PlayerEffectsTableTimerHandle PlayerEffectsTableTimer;
     }
+
+    public sealed class PlayerEffectsTableTimerCols
+    {
+        public global::SpacetimeDB.Col<PlayerEffectsTableTimer, ulong> ScheduledId { get; }
+        public global::SpacetimeDB.Col<PlayerEffectsTableTimer, SpacetimeDB.ScheduleAt> ScheduledAt { get; }
+        public global::SpacetimeDB.Col<PlayerEffectsTableTimer, float> TickRate { get; }
+        public global::SpacetimeDB.Col<PlayerEffectsTableTimer, uint> GameId { get; }
+
+        public PlayerEffectsTableTimerCols(string tableName)
+        {
+            ScheduledId = new global::SpacetimeDB.Col<PlayerEffectsTableTimer, ulong>(tableName, "scheduled_id");
+            ScheduledAt = new global::SpacetimeDB.Col<PlayerEffectsTableTimer, SpacetimeDB.ScheduleAt>(tableName, "scheduled_at");
+            TickRate = new global::SpacetimeDB.Col<PlayerEffectsTableTimer, float>(tableName, "tick_rate");
+            GameId = new global::SpacetimeDB.Col<PlayerEffectsTableTimer, uint>(tableName, "game_id");
+        }
+    }
+
+    public sealed class PlayerEffectsTableTimerIxCols
+    {
+        public global::SpacetimeDB.IxCol<PlayerEffectsTableTimer, ulong> ScheduledId { get; }
+        public global::SpacetimeDB.IxCol<PlayerEffectsTableTimer, uint> GameId { get; }
+
+        public PlayerEffectsTableTimerIxCols(string tableName)
+        {
+            ScheduledId = new global::SpacetimeDB.IxCol<PlayerEffectsTableTimer, ulong>(tableName, "scheduled_id");
+            GameId = new global::SpacetimeDB.IxCol<PlayerEffectsTableTimer, uint>(tableName, "game_id");
+        }
+    }
 }

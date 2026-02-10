@@ -6,19 +6,25 @@ use crate::*;
 // Effect Applications
 // -------------------
 
-pub fn apply_damage_effect_magician(ctx: &ReducerContext, magician: &mut Magician, damage_effect: &Option<DamageEffectInformation>) { // Applies damage effect
+pub fn apply_damage_effect_magician(ctx: &ReducerContext, magician: &mut Magician, damage_effect: &Option<DamageEffectInformation>) -> u64 { // Applies damage effect
     log::info!("Apply Damage Effect Called");
-    let damage = damage_effect.as_ref().expect("Damage Effect Must Have Information!");
-    let combat_info = &mut magician.combat_information;
-    combat_info.health -= damage.base_damage;
+    let mut reward_score = 0u64;
+    let damage_info = damage_effect.as_ref().expect("Damage Effect Must Have Information!");
+    let health = &mut magician.combat_information.health;
+    let damage = damage_info.base_damage * damage_info.damage_multiplier;
+    *health -= damage;
+    reward_score += damage as u64;
 
-    if combat_info.health <= 0.0 { // Kills target magician
+    if *health <= 0.0 { // Kills target magician
         handle_magician_death(ctx, magician);
+        reward_score += 200;
     }
 
     else { // Target magician can have cloak ability effects interrupted by incoming damage
         try_interrupt_cloak_and_speed_effects_magician(ctx, magician);
     }
+
+    reward_score
 }
 
 pub fn apply_dust_effect_magician(_ctx: &ReducerContext, target: &mut Magician, _dust_effect: &Option<DustEffectInformation>) {
@@ -122,11 +128,16 @@ pub fn undo_invincible_effect_magician(_ctx: &ReducerContext, target: &mut Magic
 // Match Functions
 // ---------------
 
-pub fn match_and_apply_single_effect(ctx: &ReducerContext, target: &mut Magician, effect: &Effect) { // Matches single effect with proper application logic
+pub fn match_and_apply_single_effect(ctx: &ReducerContext, target: &mut Magician, sender_option: Option<&mut Magician>, effect: &Effect) { // Matches single effect with proper application logic - Gathers and rewards score to sender
+    let mut reward_score = 0u64;
     match effect.effect_type {
-        EffectType::Damage => { apply_damage_effect_magician(ctx, target, &effect.damage_information); },
+        EffectType::Damage => { reward_score = apply_damage_effect_magician(ctx, target, &effect.damage_information); },
 
         _ => {}
+    }
+
+    if let Some(sender) = sender_option {
+        reward_score_magician(ctx, sender, reward_score); // Damage is only effect currently that rewards score - Logic can be copied for other effects
     }
 }
 
@@ -256,4 +267,23 @@ pub fn undo_and_delete_speed_effect_magician(ctx: &ReducerContext, target: &mut 
     let combat_info = &mut target.combat_information;
     combat_info.speed_multiplier = 1.0; // Speed undo - Reverts movement request speed server side
     ctx.db.player_effects().id().delete(speed_effect_id);
+}
+
+
+// ------------------------------
+// Effect Rewards - Certain Effects Reward Sender With Score
+// ------------------------------
+
+pub fn reward_score_magician(ctx: &ReducerContext, magician: &mut Magician, score: u64) { // Rewards score
+    log::info!("Reward Score Called");
+    let game_option = ctx.db.game().id().find(magician.game_id);
+    if let Some(mut game) = game_option {
+        let scoreboard = &mut game.scoreboard;
+        let scoreboard_player_option = scoreboard.players.iter_mut().find(|p| p.identity == magician.identity);
+
+        if let Some(player) = scoreboard_player_option { 
+            player.score += score; 
+            ctx.db.game().id().update(game);
+        }
+    }
 }

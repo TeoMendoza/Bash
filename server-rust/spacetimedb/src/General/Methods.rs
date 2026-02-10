@@ -1,4 +1,5 @@
 use spacetimedb::{ReducerContext, Table, TimeDuration, ScheduleAt};
+use spacetimedb::rand::Rng;
 use std::time::Duration;
 use crate::*;
 
@@ -124,6 +125,43 @@ pub fn remove_subscriber(subscribers: &mut Vec<String>, reason: &str)  {
     if let Some(index) = subscribers.iter().position(|existing| existing == reason) {
         subscribers.swap_remove(index); // O(1) instead of O(n) remove method
     }
+}
+
+pub fn generate_random_username(ctx: &ReducerContext) -> String {
+    const ADJECTIVES: &[&str] = &[
+        "Fun", "Cool", "Wild", "Zen", "Brave", "Swift", "Sly", "Happy", "Merry", "Chill",
+        "Spicy", "Sunny", "Lucky", "Zappy", "Fuzzy", "Snug", "Peppy", "Witty",
+    ];
+
+    const NOUNS: &[&str] = &[
+        "Monk", "Fox", "Wolf", "Bear", "Lion", "Hawk", "Crow", "Panda", "Otter", "Moth",
+        "Toad", "Crab", "Koala", "Gecko", "Tiger", "Bunny", "Raven", "Squid",
+    ];
+
+    let mut Rng = ctx.rng();
+
+    for _ in 0..32 {
+        let Adjective = ADJECTIVES[Rng.gen_range(0..ADJECTIVES.len())];
+        let Noun = NOUNS[Rng.gen_range(0..NOUNS.len())];
+
+        let DigitCount = if Rng.gen_bool(0.65) { 2 } else { 1 };
+        let MaxDigits = if DigitCount == 2 { 100 } else { 10 };
+        let Number = Rng.gen_range(0..MaxDigits).to_string();
+
+        let CandidateWithNumber = format!("{Adjective}{Noun}{Number}");
+        if CandidateWithNumber.len() <= 10 {
+            return CandidateWithNumber;
+        }
+
+        let CandidateNoNumber = format!("{Adjective}{Noun}");
+        if CandidateNoNumber.len() <= 10 {
+            return CandidateNoNumber;
+        }
+    }
+
+    let FallbackNumber = Rng.gen_range(0..1000).to_string();
+    let Fallback = format!("User{FallbackNumber}");
+    Fallback.chars().take(10).collect()
 }
 
 

@@ -2,31 +2,75 @@ using UnityEngine;
 
 public class CursorLocker : MonoBehaviour
 {
-    [SerializeField] bool lockOnStart = true;
-    bool wantLock;
+    [SerializeField] bool LockOnStart = false;
 
-    void Start() => SetLock(lockOnStart);
+    bool IsUiOpen = true;
+    bool IsManuallyUnlocked = false;
+
+    void Start()
+    {
+        ApplyCursorState(LockOnStart);
+    }
 
     void Update()
     {
-        // ESC to unlock
-        if (Input.GetKeyDown(KeyCode.Escape)) SetLock(false);
+        if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.F2))
+        {
+            IsManuallyUnlocked = true;
+            ApplyCursorState(false);
+            return;
+        }
 
-        // Click to re-lock (only if focused)
-        if (!wantLock && Input.GetMouseButtonDown(0) && Application.isFocused)
-            SetLock(true);
+        if (!Application.isFocused) return;
+
+        if (!IsUiOpen && IsManuallyUnlocked && Input.GetMouseButtonDown(0))
+        {
+            IsManuallyUnlocked = false;
+            ApplyCursorState(true);
+        }
     }
 
-    void OnApplicationFocus(bool hasFocus)
+    void OnApplicationFocus(bool HasFocus)
     {
-        if (!hasFocus) SetLock(false);           // auto-unlock when unfocused
-        // don't auto-lock on regain; wait for click so you don't trap the cursor
+        if (!HasFocus)
+        {
+            IsManuallyUnlocked = true;
+            ApplyCursorState(false);
+            return;
+        }
+
+        ApplyCursorState(GetShouldLock());
     }
 
-    void SetLock(bool locked)
+    public void SetUiOpen(bool UiOpen)
     {
-        wantLock = locked;
-        Cursor.lockState = locked ? CursorLockMode.Locked : CursorLockMode.None;
-        Cursor.visible   = !locked;
+        IsUiOpen = UiOpen;
+
+        if (UiOpen)
+        {
+            IsManuallyUnlocked = false;
+            ApplyCursorState(false);
+            return;
+        }
+
+        IsManuallyUnlocked = false;
+
+        if (Application.isFocused)
+            ApplyCursorState(true);
+        else
+            ApplyCursorState(false);
+    }
+
+    bool GetShouldLock()
+    {
+        if (IsUiOpen) return false;
+        if (IsManuallyUnlocked) return false;
+        return true;
+    }
+
+    void ApplyCursorState(bool Locked)
+    {
+        Cursor.lockState = Locked ? CursorLockMode.Locked : CursorLockMode.None;
+        Cursor.visible = !Locked;
     }
 }

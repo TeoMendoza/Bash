@@ -46,4 +46,32 @@ namespace SpacetimeDB.Types
 
         public readonly HandleMagicianTimersTimerHandle HandleMagicianTimersTimer;
     }
+
+    public sealed class HandleMagicianTimersTimerCols
+    {
+        public global::SpacetimeDB.Col<HandleMagicianTimersTimer, ulong> ScheduledId { get; }
+        public global::SpacetimeDB.Col<HandleMagicianTimersTimer, SpacetimeDB.ScheduleAt> ScheduledAt { get; }
+        public global::SpacetimeDB.Col<HandleMagicianTimersTimer, float> TickRate { get; }
+        public global::SpacetimeDB.Col<HandleMagicianTimersTimer, uint> GameId { get; }
+
+        public HandleMagicianTimersTimerCols(string tableName)
+        {
+            ScheduledId = new global::SpacetimeDB.Col<HandleMagicianTimersTimer, ulong>(tableName, "scheduled_id");
+            ScheduledAt = new global::SpacetimeDB.Col<HandleMagicianTimersTimer, SpacetimeDB.ScheduleAt>(tableName, "scheduled_at");
+            TickRate = new global::SpacetimeDB.Col<HandleMagicianTimersTimer, float>(tableName, "tick_rate");
+            GameId = new global::SpacetimeDB.Col<HandleMagicianTimersTimer, uint>(tableName, "game_id");
+        }
+    }
+
+    public sealed class HandleMagicianTimersTimerIxCols
+    {
+        public global::SpacetimeDB.IxCol<HandleMagicianTimersTimer, ulong> ScheduledId { get; }
+        public global::SpacetimeDB.IxCol<HandleMagicianTimersTimer, uint> GameId { get; }
+
+        public HandleMagicianTimersTimerIxCols(string tableName)
+        {
+            ScheduledId = new global::SpacetimeDB.IxCol<HandleMagicianTimersTimer, ulong>(tableName, "scheduled_id");
+            GameId = new global::SpacetimeDB.IxCol<HandleMagicianTimersTimer, uint>(tableName, "game_id");
+        }
+    }
 }

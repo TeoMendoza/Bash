@@ -14,6 +14,7 @@ using System.Collections;
 public class MagicianHUDController : MonoBehaviour
 {
     [SerializeField] public Canvas HudCanvas;
+    [SerializeField] GameObject MagicianKitWidget;
     [SerializeField] public CrosshairController CrosshairController;
     [SerializeField] private RectTransform HealthBar;
     [SerializeField] private TextMeshProUGUI Health;
@@ -51,6 +52,19 @@ public class MagicianHUDController : MonoBehaviour
     [SerializeField] private Sprite HypnosisEffectIcon;
     [SerializeField] private Sprite TarotEffectIcon;
     [SerializeField] private Sprite NoneEffectIcon;
+
+    void Update()
+    {
+        if (Input.GetKey(KeyCode.Tab))
+        {
+            MagicianKitWidget.SetActive(true);
+        }
+        
+        else
+        {
+            MagicianKitWidget.SetActive(false);
+        }
+    }
 
     void OnEnable()
     {

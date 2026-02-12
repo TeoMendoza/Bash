@@ -67,8 +67,8 @@ pub fn remove_player_info_from_game(ctx: &ReducerContext, game_id: u32) { // Dec
 
 pub fn create_game(ctx: &ReducerContext) -> Game { // Creates and inserts new game with scheduled reducers configured - Test player parameter adds fake player (parameter WIP)
     let created_game = ctx.db.game().insert(Game { id: 0, max_players: 12, current_players: 0, in_progress: false, scoreboard: Scoreboard { players: Vec::new() } });
-    let tick_millis: u64 = 1000 / 60;
-    let tick_rate: f32 = 1.0 / 60.0;
+    let tick_millis: u64 = 1000 / 30;
+    let tick_rate: f32 = 1.0 / 30.0;
 
     ctx.db.move_all_magicians().insert(MoveAllMagiciansTimer { scheduled_id: 0, scheduled_at: ScheduleAt::Interval(Duration::from_millis(tick_millis).into()), tick_rate, game_id: created_game.id });
     ctx.db.handle_magician_timers_timer().insert(HandleMagicianTimersTimer { scheduled_id: 0, scheduled_at: ScheduleAt::Interval(Duration::from_millis(tick_millis).into()), tick_rate, game_id: created_game.id });

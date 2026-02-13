@@ -24,7 +24,7 @@ pub struct Magician {
     pub bullet_capacity: u8,
 }
 
-#[table(name = move_all_magicians, scheduled(move_magicians_lag_test))]
+#[table(name = move_all_magicians, scheduled(move_magicians))]
 pub struct MoveAllMagiciansTimer {
     #[primary_key] #[auto_inc] pub scheduled_id: u64,
     pub scheduled_at: ScheduleAt,

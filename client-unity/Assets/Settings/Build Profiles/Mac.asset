@@ -106,7 +106,7 @@ MonoBehaviour:
     - line: '|   androidApplicationEntry: 2'
     - line: '|   defaultIsNativeResolution: 1'
     - line: '|   macRetinaSupport: 1'
-    - line: '|   runInBackground: 0'
+    - line: '|   runInBackground: 1'
     - line: '|   muteOtherAudioSources: 0'
     - line: '|   Prepare IOS For Recording: 0'
     - line: '|   Force IOS Speakers When Recording: 0'
@@ -981,5 +981,5 @@ MonoBehaviour:
         m_CompressionType: 0
         m_InstallInBuildFolder: 0
         m_MacOSXcodeBuildConfig: 1
-        m_Architecture: 2
+        m_Architecture: 1
         m_CreateXcodeProject: 0

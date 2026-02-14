@@ -21,7 +21,7 @@ public class GameManager : MonoBehaviour
     
     private void Start()
     {
-        PlayerPrefs.DeleteAll();
+        //PlayerPrefs.DeleteAll();
         
         if (Instance != null && Instance != this)
         {

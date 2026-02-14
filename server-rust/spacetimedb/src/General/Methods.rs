@@ -12,8 +12,7 @@ pub fn handle_magician_death(ctx: &ReducerContext, magician: &mut Magician) { //
     }
 
     cleanup_on_disconnect_or_death(ctx, magician);
-    let result: bool = ctx.db.magician().id().delete(magician.id);
-    log::info!("Death Result: {}", result);
+    ctx.db.magician().id().delete(magician.id);
 }
 
 pub fn cleanup_on_disconnect_or_death(ctx: &ReducerContext, magician: &mut Magician) { // Cleans up disconnected or dead magician related data - Data: collision entries and effects

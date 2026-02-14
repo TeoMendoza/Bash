@@ -4,16 +4,33 @@ using SpacetimeDB.Types;
 using Unity.Cinemachine;
 using System;
 
-
 public class MagicianController : MonoBehaviour
 {
-    [SerializeField] private CinemachineCamera thirdPersonCam;
-    [SerializeField] private GameObject thirdPersonCamPivot;
-    [SerializeField] private Canvas crosshair;
-    [SerializeField] private MagicianHUDController magicianHud;
+    [Header("Scene References")]
+    [SerializeField] CinemachineCamera ThirdPersonCam;
+    [SerializeField] GameObject ThirdPersonCamPivot;
+    [SerializeField] Canvas Crosshair;
+    [SerializeField] MagicianHUDController MagicianHud;
+
+    [Header("Tuning")]
+    public float SendRateHz = 20f;
+    public float AimYawThresholdDegrees = 0.75f;
+    public float AimPitchThresholdDegrees = 0.75f;
+
+    readonly float SensX = 200f;
+    readonly float SensY = 100f;
+    readonly float MinPitch = -50f;
+    readonly float MaxPitch = 75f;
+
+    readonly float PitchSmooth = 0.08f;
+    readonly float SpeedBlendTime = 0.15f;
 
     Magician Magician;
+    Camera MainCamera;
+
     bool IsOwner;
+    public bool InputEnabled = false;
+
     public Identity Identity;
     public ulong Id;
     public string Name;
@@ -24,45 +41,31 @@ public class MagicianController : MonoBehaviour
     public KinematicInformation KinematicInformation;
 
     public Animator Animator;
-    private Camera mainCamera;
-
-    public float SendRateHz = 20f;
-    float NextSendTime;
-    MovementRequest PreviousSentRequest;
-    bool HasPreviousSentRequest;
-    public float AimYawThresholdDegrees = 0.75f;
-    public float AimPitchThresholdDegrees = 0.75f;
 
     float Yaw;
     float Pitch;
-    private readonly float SensX = 200f;
-    private readonly float SensY = 100f;
-    private readonly float MinPitch = -50f;
-    private readonly float MaxPitch = 75f;
 
-    readonly float pitchSmooth = 0.08f;
-    float pitchCurrent;
-    float pitchVel;
+    float PitchCurrent;
+    float PitchVel;
 
     float TargetForwardSpeed;
     float TargetHorizontalSpeed;
-    readonly float SpeedBlendTime = 0.15f;
 
-    public bool InputEnabled = true;
+    public void DisableInput() => InputEnabled = false;
+    public void EnableInput() => InputEnabled = true;
 
-    public void DisableInput()
-    {
-        InputEnabled = false;
-    }
-
-    public void EnableInput()
-    {
-        InputEnabled = true;
-    }
-    
     public void Initalize(Magician Character)
     {
+        BindCharacter(Character);
+        ConfigureOwnershipAndCameras();
+        ConfigureOwnerHud();
+        SubscribeDbHandlers();
+    }
+
+    void BindCharacter(Magician Character)
+    {
         Magician = Character;
+
         Identity = Character.Identity;
         Id = Character.Id;
         Name = Character.Name;
@@ -73,118 +76,238 @@ public class MagicianController : MonoBehaviour
 
         TargetRotation = Character.Rotation;
         KinematicInformation = Character.KinematicInformation;
+    }
 
+    void ConfigureOwnershipAndCameras()
+    {
         IsOwner = Identity.Equals(GameManager.LocalIdentity);
 
-        if (thirdPersonCam != null)
-            thirdPersonCam.gameObject.SetActive(IsOwner);
+        if (ThirdPersonCam != null)
+            ThirdPersonCam.gameObject.SetActive(IsOwner);
 
         if (IsOwner)
         {
-            mainCamera = FindFirstObjectByType<CinemachineBrain>()?.OutputCamera ?? throw new Exception("No Main Camera Brain OutputCamera");
+            MainCamera = FindFirstObjectByType<CinemachineBrain>()?.OutputCamera
+                ?? throw new Exception("No Main Camera Brain OutputCamera");
+        }
+    }
 
-            if (crosshair != null) {
-                crosshair.gameObject.SetActive(true);
-                crosshair.worldCamera = mainCamera;
-            }
-                
-            if (magicianHud != null) {
-                magicianHud.gameObject.SetActive(true);
-                magicianHud.HudCanvas.worldCamera = mainCamera;
-            }     
+    void ConfigureOwnerHud()
+    {
+        if (!IsOwner)
+            return;
 
-            foreach (PlayerEffect Effect in GameManager.Conn.Db.PlayerEffects.TargetId.Filter(Id)) {
-                if (Effect.EffectType is EffectType.Invincible) magicianHud.HandleEffectAsTarget(Effect);
-            }
-
-        
+        if (Crosshair != null)
+        {
+            Crosshair.gameObject.SetActive(true);
+            Crosshair.worldCamera = MainCamera;
         }
 
+        if (MagicianHud != null)
+        {
+            MagicianHud.gameObject.SetActive(true);
+            MagicianHud.HudCanvas.worldCamera = MainCamera;
+
+            foreach (PlayerEffect Effect in GameManager.Conn.Db.PlayerEffects.TargetId.Filter(Id))
+            {
+                if (Effect.EffectType is EffectType.Invincible)
+                    MagicianHud.HandleEffectAsTarget(Effect);
+            }
+        }
+    }
+
+    void SubscribeDbHandlers()
+    {
         GameManager.Conn.Db.Magician.OnUpdate += HandleMagicianUpdate;
         GameManager.Conn.Db.Magician.OnUpdate += HandleHudUpdate;
+
         GameManager.Conn.Db.PlayerEffects.OnInsert += HandleMagicianEffectInsert;
         GameManager.Conn.Db.PlayerEffects.OnUpdate += HandleMagicianEffectUpdate;
-        GameManager.Conn.Db.PlayerEffects.OnDelete += HandleMagicianEffectDelete;        
+        GameManager.Conn.Db.PlayerEffects.OnDelete += HandleMagicianEffectDelete;
+    }
+
+    void UnsubscribeDbHandlers()
+    {
+        if (GameManager.Conn?.Db == null)
+            return;
+
+        GameManager.Conn.Db.Magician.OnUpdate -= HandleMagicianUpdate;
+        GameManager.Conn.Db.Magician.OnUpdate -= HandleHudUpdate;
+
+        GameManager.Conn.Db.PlayerEffects.OnInsert -= HandleMagicianEffectInsert;
+        GameManager.Conn.Db.PlayerEffects.OnUpdate -= HandleMagicianEffectUpdate;
+        GameManager.Conn.Db.PlayerEffects.OnDelete -= HandleMagicianEffectDelete;
     }
 
     void Update()
     {
-        if (!IsOwner || InputEnabled == false) return;
+        if (!IsOwner || !InputEnabled)
+            return;
 
+        HandleMovementRequests();
+        HandleCameraReliantActions();
+        HandleNormalActions();
+    }
+
+    void HandleMovementRequests()
+    {
         MovementRequest CurrentRequest = BuildMovementRequest();
-        bool ForceSendThisFrame = CurrentRequest.Jump;
+        GameManager.Conn.Reducers.HandleMovementRequestMagician(CurrentRequest);
+    }
 
-        float SendIntervalSeconds = 1f / Mathf.Max(1f, SendRateHz);
-        bool PassedSendInterval = Time.time >= NextSendTime;
-        bool RequestMeaningfullyChanged = !HasPreviousSentRequest || HasMeaningfulChange(PreviousSentRequest, CurrentRequest);
-
-        if ((PassedSendInterval && RequestMeaningfullyChanged) || ForceSendThisFrame)
-        {
-            GameManager.Conn.Reducers.HandleMovementRequestMagician(CurrentRequest);
-
-            PreviousSentRequest = CurrentRequest;
-            HasPreviousSentRequest = true;
-
-            if (!PassedSendInterval)
-                NextSendTime = Time.time + SendIntervalSeconds;
-                
-            else
-                NextSendTime += SendIntervalSeconds;
-        }
-
+    void HandleCameraReliantActions()
+    {
         bool Hypnosised = IsPermissionOccupied(Magician, "Hypnosised");
-        if (Input.GetMouseButton(0) || Input.GetKey(KeyCode.E) || Hypnosised is true)
+        bool AttackHeld = Input.GetMouseButton(0);
+        bool DustHeld = Input.GetKey(KeyCode.E);
+
+        if (!AttackHeld && !DustHeld && Hypnosised is false)
+            return;
+
+        Vector2 Reticle = new(Screen.width * 0.5f, Screen.height * 0.5f);
+        Ray AimRay = MainCamera.ScreenPointToRay(Reticle);
+        Vector3 ClientReticleDirection = AimRay.direction.normalized;
+
+        Vector3 CameraWorldPosition = MainCamera.transform.position;
+        Vector3 CharacterWorldPosition = transform.position;
+        Vector3 CameraWorldDelta = CameraWorldPosition - CharacterWorldPosition;
+
+        Quaternion MagicianRotation = Quaternion.Euler(Pitch, Yaw, 0f);
+        Vector3 LocalDir = Quaternion.Inverse(MagicianRotation) * ClientReticleDirection;
+
+        float CameraYawOffset = Mathf.Atan2(LocalDir.x, LocalDir.z);
+        float CameraPitchOffset = Mathf.Asin(Mathf.Clamp(LocalDir.y, -1f, 1f));
+
+        float CameraYawRadians = (Yaw * Mathf.Deg2Rad) + CameraYawOffset;
+        float CameraPitchRadians = (Pitch * Mathf.Deg2Rad) + CameraPitchOffset;
+
+        Quaternion CameraRotation =
+            Quaternion.Euler(0f, CameraYawRadians * Mathf.Rad2Deg, 0f) *
+            Quaternion.Euler(CameraPitchRadians * Mathf.Rad2Deg, 0f, 0f);
+
+        Vector3 CameraOffsetLocal = Quaternion.Inverse(CameraRotation) * CameraWorldDelta;
+
+        DbVector3 CameraOffsetLocalDb = new(CameraOffsetLocal.x, CameraOffsetLocal.y, CameraOffsetLocal.z);
+
+        if (AttackHeld)
         {
-            Vector2 reticle = new(Screen.width * 0.5f, Screen.height * 0.5f);
-            Ray aimRay = mainCamera.ScreenPointToRay(reticle);
-            Vector3 clientReticleDirection = aimRay.direction.normalized;
-
-            Vector3 cameraWorldPosition = mainCamera.transform.position;
-            Vector3 characterWorldPosition = transform.position;
-            Vector3 cameraWorldDelta = cameraWorldPosition - characterWorldPosition;
-
-            Quaternion magicianRotation = Quaternion.Euler(Pitch, Yaw, 0f);
-            Vector3 localDir = Quaternion.Inverse(magicianRotation) * clientReticleDirection;
-
-            float cameraYawOffset = Mathf.Atan2(localDir.x, localDir.z);
-            float cameraPitchOffset = Mathf.Asin(Mathf.Clamp(localDir.y, -1f, 1f));
-
-            float cameraYawRadians = (Yaw * Mathf.Deg2Rad) + cameraYawOffset;
-            float cameraPitchRadians = (Pitch * Mathf.Deg2Rad) + cameraPitchOffset;
-            Quaternion cameraRotation = Quaternion.Euler(0f, cameraYawRadians * Mathf.Rad2Deg, 0f) * Quaternion.Euler(cameraPitchRadians * Mathf.Rad2Deg, 0f, 0f);
-
-            Vector3 cameraOffsetLocal = Quaternion.Inverse(cameraRotation) * cameraWorldDelta;
-
-            if (Input.GetMouseButton(0))
-                GameManager.Conn.Reducers.HandleActionChangeRequestMagician(new ActionRequestMagician(State: MagicianState.Attack, new AttackInformation(CameraPositionOffset: new DbVector3(cameraOffsetLocal.x, cameraOffsetLocal.y, cameraOffsetLocal.z), CameraYawOffset: cameraYawOffset, CameraPitchOffset: cameraPitchOffset, SpawnPointOffset: new(0f, 1.3f, 0.4f), MaxDistance: 100f), new ReloadInformation(), new DustInformation (), new CloakInformation(), new HypnosisInformation()));
-
-            if (Input.GetKey(KeyCode.E))
-                GameManager.Conn.Reducers.HandleActionChangeRequestMagician(new ActionRequestMagician(State: MagicianState.Dust, new AttackInformation(), new ReloadInformation(), new DustInformation(CameraPositionOffset: new DbVector3(cameraOffsetLocal.x, cameraOffsetLocal.y, cameraOffsetLocal.z), CameraYawOffset: cameraYawOffset, CameraPitchOffset: cameraPitchOffset, SpawnPointOffset: new(0f, 1.3f, 0.4f), MaxDistance: 2.5f, ConeHalfAngleDegrees: 20f), new CloakInformation(), new HypnosisInformation()));
-
-            if (Hypnosised is true) 
-                GameManager.Conn.Reducers.Hypnotise(new HypnosisCameraInformation(CameraPositionOffset: new DbVector3(cameraOffsetLocal.x, cameraOffsetLocal.y, cameraOffsetLocal.z), CameraYawOffset: cameraYawOffset, CameraPitchOffset: cameraPitchOffset, SpawnPointOffset: new DbVector3(0f, 1.65f, 0.15f), MaxDistance: 12f));
+            GameManager.Conn.Reducers.HandleActionChangeRequestMagician(
+                new ActionRequestMagician(
+                    State: MagicianState.Attack,
+                    new AttackInformation(
+                        CameraPositionOffset: CameraOffsetLocalDb,
+                        CameraYawOffset: CameraYawOffset,
+                        CameraPitchOffset: CameraPitchOffset,
+                        SpawnPointOffset: new(0f, 1.3f, 0.4f),
+                        MaxDistance: 100f
+                    ),
+                    new ReloadInformation(),
+                    new DustInformation(),
+                    new CloakInformation(),
+                    new HypnosisInformation()
+                )
+            );
         }
 
-        if (Input.GetKey(KeyCode.R))     
-            GameManager.Conn.Reducers.HandleActionChangeRequestMagician(new ActionRequestMagician(State: MagicianState.Reload, new AttackInformation(), new ReloadInformation(), new DustInformation(), new CloakInformation(), new HypnosisInformation()));
+        if (DustHeld)
+        {
+            GameManager.Conn.Reducers.HandleActionChangeRequestMagician(
+                new ActionRequestMagician(
+                    State: MagicianState.Dust,
+                    new AttackInformation(),
+                    new ReloadInformation(),
+                    new DustInformation(
+                        CameraPositionOffset: CameraOffsetLocalDb,
+                        CameraYawOffset: CameraYawOffset,
+                        CameraPitchOffset: CameraPitchOffset,
+                        SpawnPointOffset: new(0f, 1.3f, 0.4f),
+                        MaxDistance: 2.5f,
+                        ConeHalfAngleDegrees: 20f
+                    ),
+                    new CloakInformation(),
+                    new HypnosisInformation()
+                )
+            );
+        }
+
+        if (Hypnosised is true)
+        {
+            GameManager.Conn.Reducers.Hypnotise(
+                new HypnosisCameraInformation(
+                    CameraPositionOffset: CameraOffsetLocalDb,
+                    CameraYawOffset: CameraYawOffset,
+                    CameraPitchOffset: CameraPitchOffset,
+                    SpawnPointOffset: new DbVector3(0f, 1.65f, 0.15f),
+                    MaxDistance: 12f
+                )
+            );
+        }
+    }
+
+    void HandleNormalActions()
+    {
+        if (Input.GetKey(KeyCode.R))
+        {
+            GameManager.Conn.Reducers.HandleActionChangeRequestMagician(
+                new ActionRequestMagician(
+                    State: MagicianState.Reload,
+                    new AttackInformation(),
+                    new ReloadInformation(),
+                    new DustInformation(),
+                    new CloakInformation(),
+                    new HypnosisInformation()
+                )
+            );
+        }
 
         if (Input.GetKey(KeyCode.F))
-            GameManager.Conn.Reducers.HandleActionChangeRequestMagician(new ActionRequestMagician(State: MagicianState.Cloak, new AttackInformation(), new ReloadInformation(), new DustInformation(), new CloakInformation(), new HypnosisInformation()));
+        {
+            GameManager.Conn.Reducers.HandleActionChangeRequestMagician(
+                new ActionRequestMagician(
+                    State: MagicianState.Cloak,
+                    new AttackInformation(),
+                    new ReloadInformation(),
+                    new DustInformation(),
+                    new CloakInformation(),
+                    new HypnosisInformation()
+                )
+            );
+        }
 
         if (Input.GetKey(KeyCode.C))
-            GameManager.Conn.Reducers.HandleActionChangeRequestMagician(new ActionRequestMagician(State: MagicianState.Hypnosis, new AttackInformation(), new ReloadInformation(), new DustInformation(), new CloakInformation(), new HypnosisInformation()));
+        {
+            GameManager.Conn.Reducers.HandleActionChangeRequestMagician(
+                new ActionRequestMagician(
+                    State: MagicianState.Hypnosis,
+                    new AttackInformation(),
+                    new ReloadInformation(),
+                    new DustInformation(),
+                    new CloakInformation(),
+                    new HypnosisInformation()
+                )
+            );
+        }
 
-        if (Input.GetMouseButton(1))
+        if (Input.GetMouseButton(1)) {
             GameManager.Conn.Reducers.HandleStatelessActionRequestMagician(new StatelessActionRequestMagician(Action: MagicianStatelessAction.Tarot));
+        }
 
         if (Input.GetKeyDown(KeyCode.M))
             GameManager.Conn.Reducers.TakeArtificalDamage();
-
     }
 
     public MovementRequest BuildMovementRequest()
     {
-        MovementRequest CurrentRequest = new(MoveForward: false, MoveBackward: false, MoveLeft: false, MoveRight: false, Sprint: false, Jump: false, Crouch: false, Aim: new DbRotation2(0, 0));
+        MovementRequest CurrentRequest = new(
+            MoveForward: false,
+            MoveBackward: false,
+            MoveLeft: false,
+            MoveRight: false,
+            Sprint: false,
+            Jump: false,
+            Crouch: false,
+            Aim: new DbRotation2(0, 0)
+        );
 
         if (Input.GetKey(KeyCode.W)) CurrentRequest.MoveForward = true;
         if (Input.GetKey(KeyCode.S)) CurrentRequest.MoveBackward = true;
@@ -241,14 +364,14 @@ public class MagicianController : MonoBehaviour
         float k = 1f - Mathf.Exp(-12f * Time.deltaTime);
         transform.position = Vector3.Lerp(transform.position, TargetPosition, k);
 
-        float targetYaw = TargetRotation.Yaw;
-        Quaternion targetRot = Quaternion.Euler(0f, targetYaw, 0f);
-        transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, 1f - Mathf.Exp(-12f * Time.deltaTime));
+        float TargetYaw = TargetRotation.Yaw;
+        Quaternion TargetRot = Quaternion.Euler(0f, TargetYaw, 0f);
+        transform.rotation = Quaternion.Slerp(transform.rotation, TargetRot, 1f - Mathf.Exp(-12f * Time.deltaTime));
 
-        if (thirdPersonCamPivot != null)
+        if (ThirdPersonCamPivot != null)
         {
-            pitchCurrent = Mathf.SmoothDampAngle(pitchCurrent, TargetRotation.Pitch, ref pitchVel, pitchSmooth);
-            thirdPersonCamPivot.transform.localRotation = Quaternion.Euler(pitchCurrent, 0f, 0f);
+            PitchCurrent = Mathf.SmoothDampAngle(PitchCurrent, TargetRotation.Pitch, ref PitchVel, PitchSmooth);
+            ThirdPersonCamPivot.transform.localRotation = Quaternion.Euler(PitchCurrent, 0f, 0f);
         }
 
         if (Animator != null)
@@ -260,12 +383,13 @@ public class MagicianController : MonoBehaviour
 
     public void HandleMagicianUpdate(EventContext context, Magician oldChar, Magician newChar)
     {
-        if (Id != newChar.Id) return;
+        if (Id != newChar.Id)
+            return;
 
         Magician = newChar;
         TargetPosition = newChar.Position;
         TargetRotation = newChar.Rotation;
-        
+
         bool Jump = oldChar.KinematicInformation.Jump is false && newChar.KinematicInformation.Jump is true;
 
         bool Attack = oldChar.State is not MagicianState.Attack && newChar.State is MagicianState.Attack;
@@ -307,7 +431,7 @@ public class MagicianController : MonoBehaviour
             if (CloakDone) Animator.SetTrigger("CloakDone");
 
             if (Hypnosis) Animator.SetTrigger("Hypnosis");
-            if (HypnosisDone) Animator.SetTrigger("HypnosisDone");      
+            if (HypnosisDone) Animator.SetTrigger("HypnosisDone");
 
             if (Stunned) Animator.SetTrigger("Stunned");
             if (StunnedDone) Animator.SetTrigger("StunnedDone");
@@ -319,8 +443,8 @@ public class MagicianController : MonoBehaviour
 
         DbVector3 AnimationVelocity = newChar.RequestedVelocity;
         Vector3 vWorld = new(AnimationVelocity.X, 0f, AnimationVelocity.Z);
-        Quaternion yawOnly = Quaternion.Euler(0f, newChar.Rotation.Yaw, 0f);
-        Vector3 vLocal = Quaternion.Inverse(yawOnly) * vWorld;
+        Quaternion YawOnly = Quaternion.Euler(0f, newChar.Rotation.Yaw, 0f);
+        Vector3 vLocal = Quaternion.Inverse(YawOnly) * vWorld;
 
         TargetForwardSpeed = vLocal.z;
         TargetHorizontalSpeed = vLocal.x;
@@ -328,92 +452,103 @@ public class MagicianController : MonoBehaviour
 
     public void HandleHudUpdate(EventContext context, Magician oldMagician, Magician newMagician)
     {
-        if (!IsOwner || Id != newMagician.Id) return;
-        
-        // Health Hud Update
+        if (!IsOwner || Id != newMagician.Id)
+            return;
+
         if (oldMagician.CombatInformation.Health != newMagician.CombatInformation.Health)
-            magicianHud.UpdateHealth((int)newMagician.CombatInformation.Health);
+            MagicianHud.UpdateHealth((int)newMagician.CombatInformation.Health);
 
-        // Throwing Cards Hud Update
         if (oldMagician.Bullets.Count != newMagician.Bullets.Count)
-            magicianHud.UpdateAmmo(newMagician.Bullets.Count);
+            MagicianHud.UpdateAmmo(newMagician.Bullets.Count);
 
-        // Tarot Hud Update
+        HandleTarotHud(oldMagician, newMagician);
+        HandleDustHud(oldMagician, newMagician);
+        HandleCloakHud(oldMagician, newMagician);
+        HandleHypnosisHud(oldMagician, newMagician);
+    }
+
+    void HandleTarotHud(Magician oldMagician, Magician newMagician)
+    {
         if (oldMagician.StatelessTimers[0].State is StatelessTimerState.Useable && newMagician.StatelessTimers[0].State is StatelessTimerState.InCooldown)
-            magicianHud.StartTarotCooldown();
-        
+            MagicianHud.StartTarotCooldown();
+
         if (newMagician.StatelessTimers[0].State is StatelessTimerState.InCooldown)
-            magicianHud.UpdateTarot((int)Math.Ceiling(newMagician.StatelessTimers[0].CooldownTime - newMagician.StatelessTimers[0].CurrentTime));
+            MagicianHud.UpdateTarot((int)Math.Ceiling(newMagician.StatelessTimers[0].CooldownTime - newMagician.StatelessTimers[0].CurrentTime));
 
         if (oldMagician.StatelessTimers[0].State is StatelessTimerState.InCooldown && newMagician.StatelessTimers[0].State is StatelessTimerState.Useable)
-            magicianHud.EndTarotCooldown();
+            MagicianHud.EndTarotCooldown();
+    }
 
-        // Dust Hud Update
+    void HandleDustHud(Magician oldMagician, Magician newMagician)
+    {
         if (oldMagician.Timers[2].State is TimerState.Usable && newMagician.Timers[2].State is not TimerState.Usable)
-            magicianHud.StartDustCooldown();
-        
+            MagicianHud.StartDustCooldown();
+
         if (newMagician.Timers[2].State is not TimerState.Usable)
-            magicianHud.UpdateDust((int)Math.Ceiling(newMagician.Timers[2].CooldownTime - newMagician.Timers[2].CurrentTime));
+            MagicianHud.UpdateDust((int)Math.Ceiling(newMagician.Timers[2].CooldownTime - newMagician.Timers[2].CurrentTime));
 
         if (oldMagician.Timers[2].State is not TimerState.Usable && newMagician.Timers[2].State is TimerState.Usable)
-            magicianHud.EndDustCooldown();
+            MagicianHud.EndDustCooldown();
+    }
 
-        // Cloak Hud Update
+    void HandleCloakHud(Magician oldMagician, Magician newMagician)
+    {
         if (oldMagician.Timers[3].State is TimerState.Usable && newMagician.Timers[3].State is not TimerState.Usable)
-            magicianHud.StartCloakCooldown();
-        
+            MagicianHud.StartCloakCooldown();
+
         if (newMagician.Timers[3].State is not TimerState.Usable)
-            magicianHud.UpdateCloak((int)Math.Ceiling(newMagician.Timers[3].CooldownTime - newMagician.Timers[3].CurrentTime));
+            MagicianHud.UpdateCloak((int)Math.Ceiling(newMagician.Timers[3].CooldownTime - newMagician.Timers[3].CurrentTime));
 
         if (oldMagician.Timers[3].State is not TimerState.Usable && newMagician.Timers[3].State is TimerState.Usable)
-            magicianHud.EndCloakCooldown();
+            MagicianHud.EndCloakCooldown();
+    }
 
-        // Hypnosis Hud Update
+    void HandleHypnosisHud(Magician oldMagician, Magician newMagician)
+    {
         if (oldMagician.Timers[4].State is TimerState.Usable && newMagician.Timers[4].State is not TimerState.Usable)
-            magicianHud.StartHypnosisCooldown();
-        
+            MagicianHud.StartHypnosisCooldown();
+
         if (newMagician.Timers[4].State is not TimerState.Usable)
-            magicianHud.UpdateHypnosis((int)Math.Ceiling(newMagician.Timers[4].CooldownTime - newMagician.Timers[4].CurrentTime));
+            MagicianHud.UpdateHypnosis((int)Math.Ceiling(newMagician.Timers[4].CooldownTime - newMagician.Timers[4].CurrentTime));
 
         if (oldMagician.Timers[4].State is not TimerState.Usable && newMagician.Timers[4].State is TimerState.Usable)
-            magicianHud.EndHypnosisCooldown();
-        
+            MagicianHud.EndHypnosisCooldown();
     }
 
     public void HandleMagicianEffectInsert(EventContext context, PlayerEffect insertedEffect)
     {
-        if (!IsOwner) return;
+        if (!IsOwner)
+            return;
 
-        if (insertedEffect.TargetId == Id) {
-            magicianHud.HandleEffectAsTarget(insertedEffect);
-        }
+        if (insertedEffect.TargetId == Id)
+            MagicianHud.HandleEffectAsTarget(insertedEffect);
 
-        else if (insertedEffect.SenderId == Id) {
-            magicianHud.HandleEffectAsSender(insertedEffect);
-        }
+        else if (insertedEffect.SenderId == Id)
+            MagicianHud.HandleEffectAsSender(insertedEffect);
     }
 
     public void HandleMagicianEffectDelete(EventContext context, PlayerEffect deletedEffect)
     {
-        if (!IsOwner) return;
+        if (!IsOwner)
+            return;
 
-        if (deletedEffect.TargetId == Id) {
-            magicianHud.HandleEffectRemoveAsTarget(deletedEffect);
-        }
+        if (deletedEffect.TargetId == Id)
+            MagicianHud.HandleEffectRemoveAsTarget(deletedEffect);
     }
 
     public void HandleMagicianEffectUpdate(EventContext context, PlayerEffect oldEffect, PlayerEffect newEffect)
     {
-        if (!IsOwner) return;
+        if (!IsOwner)
+            return;
+
+        if (newEffect.EffectType == EffectType.Damage || newEffect.EffectType == EffectType.Dust || newEffect.EffectType == EffectType.Stunned)
+            return;
 
         ApplicationInformation oldInfo = oldEffect.EffectInfo.ApplicationInformation;
         ApplicationInformation newInfo = newEffect.EffectInfo.ApplicationInformation;
 
-        if (newEffect.EffectType == EffectType.Damage || newEffect.EffectType == EffectType.Dust || newEffect.EffectType == EffectType.Stunned)
-            return; 
-
         if (newInfo.EndTime - newInfo.CurrentTime < 2.0 && oldInfo.EndTime - oldInfo.CurrentTime > 2.0)
-            magicianHud.TryHudIconFlash(newEffect);
+            MagicianHud.TryHudIconFlash(newEffect);
     }
 
     public void OnTriggerEnter(Collider other)
@@ -427,7 +562,6 @@ public class MagicianController : MonoBehaviour
                 GameManager.Conn.Reducers.AddCollisionEntryMagician(Entry, Identity);
             }
         }
-
         else if (other.gameObject.CompareTag("Map"))
         {
             MapPiece Map = other.gameObject.GetComponent<MapPiece>();
@@ -447,7 +581,6 @@ public class MagicianController : MonoBehaviour
                 GameManager.Conn.Reducers.RemoveCollisionEntryMagician(Entry, Identity);
             }
         }
-
         else if (other.gameObject.CompareTag("Map"))
         {
             MapPiece Map = other.gameObject.GetComponent<MapPiece>();
@@ -459,21 +592,12 @@ public class MagicianController : MonoBehaviour
     public void LeaveToLobby()
     {
         if (IsOwner)
-            MatchManager.Instance.CleanupMatchManager(); 
+            MatchManager.Instance.CleanupMatchManager();
     }
 
     public void Delete()
     {
-        
-        if (GameManager.Conn?.Db != null)
-        {
-            GameManager.Conn.Db.Magician.OnUpdate -= HandleMagicianUpdate;
-            GameManager.Conn.Db.Magician.OnUpdate -= HandleHudUpdate;
-            GameManager.Conn.Db.PlayerEffects.OnInsert -= HandleMagicianEffectInsert;
-            GameManager.Conn.Db.PlayerEffects.OnUpdate -= HandleMagicianEffectUpdate;
-            GameManager.Conn.Db.PlayerEffects.OnDelete -= HandleMagicianEffectDelete;
-        }
-
+        UnsubscribeDbHandlers();
         Destroy(gameObject);
     }
 }

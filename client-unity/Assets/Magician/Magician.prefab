@@ -3989,19 +3989,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e93a1e9e576ec4ddba74cd1abb92f2a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  thirdPersonCam: {fileID: 130110530841660341}
-  thirdPersonCamPivot: {fileID: 2699486566614823106}
-  crosshair: {fileID: 355561856600305020}
-  magicianHud: {fileID: 8769569283322401838}
+  ThirdPersonCam: {fileID: 130110530841660341}
+  ThirdPersonCamPivot: {fileID: 2699486566614823106}
+  Crosshair: {fileID: 355561856600305020}
+  MagicianHud: {fileID: 8769569283322401838}
+  SendRateHz: 20
+  AimYawThresholdDegrees: 0.75
+  AimPitchThresholdDegrees: 0.75
+  InputEnabled: 1
   Id: 0
   Name: 
   MatchId: 0
   TargetPosition: {x: 0, y: 0, z: 0}
   Animator: {fileID: 2206526370085371118}
-  SendRateHz: 20
-  AimYawThresholdDegrees: 0.75
-  AimPitchThresholdDegrees: 0.75
-  InputEnabled: 1
 --- !u!136 &7925984418022316257
 CapsuleCollider:
   m_ObjectHideFlags: 0

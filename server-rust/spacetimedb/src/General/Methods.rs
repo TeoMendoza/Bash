@@ -12,7 +12,8 @@ pub fn handle_magician_death(ctx: &ReducerContext, magician: &mut Magician) { //
     }
 
     cleanup_on_disconnect_or_death(ctx, magician);
-    ctx.db.magician().id().delete(magician.id);
+    let result: bool = ctx.db.magician().id().delete(magician.id);
+    log::info!("Death Result: {}", result);
 }
 
 pub fn cleanup_on_disconnect_or_death(ctx: &ReducerContext, magician: &mut Magician) { // Cleans up disconnected or dead magician related data - Data: collision entries and effects
@@ -55,10 +56,8 @@ pub fn remove_player_info_from_game(ctx: &ReducerContext, game_id: u32) { // Dec
         }
 
         let scoreboard_players = &mut game.scoreboard.players;
-        for index in 0..scoreboard_players.len() {
-            if scoreboard_players[index].identity == ctx.sender {
-                scoreboard_players.swap_remove(index);
-            }
+        if let Some(index) = scoreboard_players.iter().position(|p| p.identity == ctx.sender) {
+            scoreboard_players.swap_remove(index);
         }
 
         ctx.db.game().id().update(game);

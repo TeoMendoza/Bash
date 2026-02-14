@@ -77,7 +77,7 @@ pub fn try_join_game(ctx: &ReducerContext) // Adds player to first unstarted gam
         };
 
         game.scoreboard.players.push(scoreboard_player);
-        if game.current_players == 1 && game.in_progress != true { // Starts game if full - No new players can join, players can leave and rejoin (rejoin WIP)
+        if game.current_players == 2 && game.in_progress != true { // Starts game if full - No new players can join, players can leave and rejoin (rejoin WIP)
             game.in_progress = true;
             for scoreboard_player in game.scoreboard.players.iter_mut() {
                 scoreboard_player.score = 0;

@@ -92,10 +92,12 @@ public class MagicianController : MonoBehaviour
                 magicianHud.gameObject.SetActive(true);
                 magicianHud.HudCanvas.worldCamera = mainCamera;
             }     
-        }
 
-        foreach (PlayerEffect Effect in GameManager.Conn.Db.PlayerEffects.TargetId.Filter(Id)) {
-            if (Effect.EffectType is EffectType.Invincible) magicianHud.HandleEffectAsTarget(Effect);
+            foreach (PlayerEffect Effect in GameManager.Conn.Db.PlayerEffects.TargetId.Filter(Id)) {
+                if (Effect.EffectType is EffectType.Invincible) magicianHud.HandleEffectAsTarget(Effect);
+            }
+
+        
         }
 
         GameManager.Conn.Db.Magician.OnUpdate += HandleMagicianUpdate;
@@ -258,7 +260,7 @@ public class MagicianController : MonoBehaviour
 
     public void HandleMagicianUpdate(EventContext context, Magician oldChar, Magician newChar)
     {
-        if (Identity != newChar.Identity) return;
+        if (Id != newChar.Id) return;
 
         Magician = newChar;
         TargetPosition = newChar.Position;
@@ -326,7 +328,7 @@ public class MagicianController : MonoBehaviour
 
     public void HandleHudUpdate(EventContext context, Magician oldMagician, Magician newMagician)
     {
-        if (Identity != newMagician.Identity) return;
+        if (!IsOwner || Id != newMagician.Id) return;
         
         // Health Hud Update
         if (oldMagician.CombatInformation.Health != newMagician.CombatInformation.Health)
@@ -462,13 +464,16 @@ public class MagicianController : MonoBehaviour
 
     public void Delete()
     {
-        Destroy(gameObject);
-        if (GameManager.Conn?.Db == null) return;
+        
+        if (GameManager.Conn?.Db != null)
+        {
+            GameManager.Conn.Db.Magician.OnUpdate -= HandleMagicianUpdate;
+            GameManager.Conn.Db.Magician.OnUpdate -= HandleHudUpdate;
+            GameManager.Conn.Db.PlayerEffects.OnInsert -= HandleMagicianEffectInsert;
+            GameManager.Conn.Db.PlayerEffects.OnUpdate -= HandleMagicianEffectUpdate;
+            GameManager.Conn.Db.PlayerEffects.OnDelete -= HandleMagicianEffectDelete;
+        }
 
-        GameManager.Conn.Db.Magician.OnUpdate -= HandleMagicianUpdate;
-        GameManager.Conn.Db.Magician.OnUpdate -= HandleHudUpdate;
-        GameManager.Conn.Db.PlayerEffects.OnInsert -= HandleMagicianEffectInsert;
-        GameManager.Conn.Db.PlayerEffects.OnUpdate -= HandleMagicianEffectUpdate;
-        GameManager.Conn.Db.PlayerEffects.OnDelete -= HandleMagicianEffectDelete;
+        Destroy(gameObject);
     }
 }

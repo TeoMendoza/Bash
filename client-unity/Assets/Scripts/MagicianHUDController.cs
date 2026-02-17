@@ -8,6 +8,7 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using System.Threading.Tasks;
 
 #nullable enable
 
@@ -16,10 +17,20 @@ public class MagicianHUDController : MonoBehaviour
     [SerializeField] public Canvas HudCanvas;
     [SerializeField] GameObject MagicianKitWidget;
     [SerializeField] public CrosshairController CrosshairController;
-    [SerializeField] private RectTransform HealthBar;
+    [SerializeField] private RectTransform InstantHealthBar;
+    [SerializeField] private RectTransform DelayedHealthBar;
     [SerializeField] private TextMeshProUGUI Health;
     private float HealthBarWidth;
+    Coroutine? ActiveHealthBarCoroutine;
+    [SerializeField] float DelayedDurationSeconds = 0.25f;
+    [SerializeField] Image DelayedHealthBarImage;
+    [SerializeField] Color DelayedNormalColor = Color.white;
+    [SerializeField] Color DelayedDamageColor = Color.red;
 
+    [SerializeField] Image DustCloud;
+    [SerializeField] float DustCloudFadeSeconds = 0.1f;
+    Coroutine? ActiveDustCloudCoroutine;
+    
     [SerializeField] private TextMeshProUGUI Ammo;
     [SerializeField] private Image AmmoIcon;
 
@@ -46,11 +57,13 @@ public class MagicianHUDController : MonoBehaviour
     [SerializeField] private Image EffectIcon4;
     [SerializeField] private Image EffectIcon5;
 
+    [SerializeField] SkinnedMeshRenderer Skin;
     [SerializeField] private Sprite CloakEffectIcon;
     [SerializeField] private Sprite SpeedEffectIcon;
     [SerializeField] private Sprite InvincibleEffectIcon;
     [SerializeField] private Sprite HypnosisEffectIcon;
     [SerializeField] private Sprite TarotEffectIcon;
+    [SerializeField] private Sprite DustEffectIcon;
     [SerializeField] private Sprite NoneEffectIcon;
 
     void Update()
@@ -68,16 +81,43 @@ public class MagicianHUDController : MonoBehaviour
 
     void OnEnable()
     {
-        HealthBarWidth = HealthBar.sizeDelta.x;
+        HealthBarWidth = InstantHealthBar.sizeDelta.x;
         HudEffectsIcons = new Dictionary<int, Image> { {0, EffectIcon1}, {1, EffectIcon2}, {2, EffectIcon3}, {3, EffectIcon4}, {4, EffectIcon5} };
         HudEffects = new HudEffect?[] { null, null, null, null, null };
     }
 
-    public void UpdateHealth(int newHealth)
+    public void UpdateHealth(int NewHealth)
     {
-        Health.text = newHealth.ToString();
-        float HealthPercent = Mathf.Clamp01(newHealth / 200f);
-        HealthBar.sizeDelta = new Vector2(HealthBarWidth * HealthPercent, HealthBar.sizeDelta.y);   
+        Health.text = NewHealth.ToString();
+
+        float NewPercent = Mathf.Clamp01(NewHealth / 200f);
+        float InstantTargetWidth = HealthBarWidth * NewPercent;
+
+        float CurrentInstantWidth = InstantHealthBar.sizeDelta.x;
+        float CurrentDelayedWidth = DelayedHealthBar.sizeDelta.x;
+
+        InstantHealthBar.sizeDelta = new Vector2(InstantTargetWidth, InstantHealthBar.sizeDelta.y);
+
+        bool IsDamage = InstantTargetWidth < CurrentInstantWidth;
+
+        if (!IsDamage)
+        {
+            if (ActiveHealthBarCoroutine != null)
+            {
+                StopCoroutine(ActiveHealthBarCoroutine);
+                ActiveHealthBarCoroutine = null;
+            }
+
+            DelayedHealthBar.sizeDelta = new Vector2(InstantTargetWidth, DelayedHealthBar.sizeDelta.y);
+
+            if (DelayedHealthBarImage != null) DelayedHealthBarImage.color = DelayedNormalColor;
+            return;
+        }
+
+        if (DelayedHealthBarImage != null) DelayedHealthBarImage.color = DelayedDamageColor;
+
+        if (ActiveHealthBarCoroutine != null) StopCoroutine(ActiveHealthBarCoroutine);
+        ActiveHealthBarCoroutine = StartCoroutine(AnimateDelayedHealthBarToTargetWidth(InstantTargetWidth, DelayedDurationSeconds));
     }
 
     public void UpdateAmmo(int newAmmo)
@@ -183,12 +223,11 @@ public class MagicianHUDController : MonoBehaviour
 
     public void HandleEffectAsTarget(PlayerEffect Effect)
     {
-        if (Effect.EffectType == EffectType.Damage) {
-            // Apply Red Tint
-        }
+        if (Effect.EffectType == EffectType.Damage) { }
 
         else if (Effect.EffectType == EffectType.Dust) {
-            // Apply Dust Blind - Also Possibly On Magician Model (Could Be Done Through Animation Tree)
+            AddEffectToHud(Effect);
+            SetDustCloudActive(true);
         }
         
         else if (Effect.EffectType == EffectType.Stunned) {
@@ -209,12 +248,13 @@ public class MagicianHUDController : MonoBehaviour
 
     public void HandleEffectRemoveAsTarget(PlayerEffect Effect)
     {
-        if (Effect.EffectType == EffectType.Damage) { } // Do Nothing - Red Tints Resolves Itself
-
-        else if (Effect.EffectType == EffectType.Dust) {
-            // Remove Dust Blind
-        }
+        if (Effect.EffectType == EffectType.Damage) { }
         
+        else if (Effect.EffectType == EffectType.Dust) {
+           RemoveEffectFromHud(Effect);
+           SetDustCloudActive(false);
+        }
+
         else if (Effect.EffectType == EffectType.Stunned) {
             // Remove "You Are Stunned" Effect Stuff
         }
@@ -242,6 +282,10 @@ public class MagicianHUDController : MonoBehaviour
                 {
                     case EffectType.Cloak:
                         HudEffectsIcons[Index].sprite = CloakEffectIcon;
+                        break;
+
+                    case EffectType.Dust:
+                        HudEffectsIcons[Index].sprite = DustEffectIcon;
                         break;
 
                     case EffectType.Invincible:
@@ -337,6 +381,69 @@ public class MagicianHUDController : MonoBehaviour
             HudEffectsIcons[Index].color = ColorValue;
         }
     }
+
+    IEnumerator AnimateDelayedHealthBarToTargetWidth(float TargetWidth, float DurationSeconds)
+    {
+        float StartWidth = DelayedHealthBar.sizeDelta.x;
+        float ElapsedSeconds = 0f;
+
+        while (ElapsedSeconds < DurationSeconds)
+        {
+            ElapsedSeconds += Time.deltaTime;
+            float Time01 = Mathf.Clamp01(ElapsedSeconds / DurationSeconds);
+
+            float NewWidth = Mathf.Lerp(StartWidth, TargetWidth, Time01);
+            DelayedHealthBar.sizeDelta = new Vector2(NewWidth, DelayedHealthBar.sizeDelta.y);
+
+            yield return null;
+        }
+
+        DelayedHealthBar.sizeDelta = new Vector2(TargetWidth, DelayedHealthBar.sizeDelta.y);
+
+        if (DelayedHealthBarImage != null) DelayedHealthBarImage.color = DelayedNormalColor;
+
+        ActiveHealthBarCoroutine = null;
+    }
+
+    public void SetDustCloudActive(bool IsActive)
+    {
+        if (DustCloud == null) return;
+
+        if (ActiveDustCloudCoroutine != null)
+        {
+            StopCoroutine(ActiveDustCloudCoroutine);
+            ActiveDustCloudCoroutine = null;
+        }
+
+        float TargetAlpha01 = IsActive ? 1f : 0f;
+        ActiveDustCloudCoroutine = StartCoroutine(AnimateDustCloudAlpha(TargetAlpha01, DustCloudFadeSeconds));
+    }
+
+    IEnumerator AnimateDustCloudAlpha(float TargetAlpha01, float DurationSeconds)
+    {
+        if (DustCloud == null) yield break;
+
+        Color CurrentColor = DustCloud.color;
+        float StartAlpha01 = CurrentColor.a;
+
+        float ElapsedSeconds = 0f;
+
+        while (ElapsedSeconds < DurationSeconds)
+        {
+            ElapsedSeconds += Time.deltaTime;
+            float Time01 = Mathf.Clamp01(ElapsedSeconds / DurationSeconds);
+
+            float NewAlpha01 = Mathf.Lerp(StartAlpha01, TargetAlpha01, Time01);
+            DustCloud.color = new Color(CurrentColor.r, CurrentColor.g, CurrentColor.b, NewAlpha01);
+
+            yield return null;
+        }
+
+        DustCloud.color = new Color(CurrentColor.r, CurrentColor.g, CurrentColor.b, TargetAlpha01);
+        ActiveDustCloudCoroutine = null;
+    }
+
+    
 
     public class HudEffect
     {

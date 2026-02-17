@@ -132,7 +132,7 @@ pub fn handle_action_change_request_magician(ctx: &ReducerContext, request: Acti
         }
     }
 
-    if magician.state != MagicianState::Default && magician.state != MagicianState::Reload && magician.state != MagicianState::Cloak && magician.state != MagicianState::Stunned { // If magician takes offensive action, cloak effects if existing are interrupted
+    if magician.state != MagicianState::Default && magician.state != MagicianState::Reload && magician.state != MagicianState::Cloak { // If magician takes offensive action, cloak effects if existing are interrupted
         try_interrupt_cloak_and_speed_effects_magician(ctx, &mut magician);
     }
 
@@ -152,7 +152,7 @@ pub fn handle_stateless_action_request_magician(ctx: &ReducerContext, request: S
     let stunned = is_permission_unblocked(&magician.permissions, "Stunned") == false;
     let mut took_stateless_action = false;
 
-    if request.action == MagicianStatelessAction::Tarot && is_permission_unblocked(&magician.permissions, "CanTarot") && stunned == false { // Stateless actions still have cooldowns - Handled within the ability method itself
+    if request.action == MagicianStatelessAction::Tarot && is_permission_unblocked(&magician.permissions, "CanTarot") && stunned == false && magician.bullets.len() >= 1 { // Stateless actions still have cooldowns - Handled within the ability method itself
         try_tarot(ctx, &mut magician);
         add_subscriber_to_permission(&mut magician.permissions, "CanTarot", "Tarot");
         took_stateless_action = true;
@@ -172,14 +172,7 @@ pub fn handle_magician_timers(ctx: &ReducerContext, timer: HandleMagicianTimersT
         match magician.state { // Case: active state
             MagicianState::Attack => {
                 if tick_active_timer_and_check_expired(&mut magician, "Attack", time) { // Checks if consume/use time is over, resets permissions and state accordingly
-                    if magician.bullets.len() > 0 { // Switches to reload state automatically if no bullets
-                        magician.state = MagicianState::Default;
-                    } 
-                    
-                    else {
-                        magician.state = MagicianState::Reload;
-                        add_subscriber_to_permission(&mut magician.permissions, "CanReload", "Reload"); // Add To Every Other State To Ensure Transition Back To Reload (WIP)
-                    }
+                    try_transition_to_reload(&mut magician);
 
                     remove_subscriber_from_permission(&mut magician.permissions, "CanReload", "Attack");
                     remove_subscriber_from_permission(&mut magician.permissions, "CanDust", "Attack");
@@ -197,7 +190,8 @@ pub fn handle_magician_timers(ctx: &ReducerContext, timer: HandleMagicianTimersT
 
             MagicianState::Dust => {
                 if tick_active_timer_and_check_expired(&mut magician, "Dust", time) { // Checks if consume/use time is over, resets permissions and state accordingly
-                    magician.state = MagicianState::Default;
+                    try_transition_to_reload(&mut magician);
+
                     remove_subscriber_from_permission(&mut magician.permissions, "CanReload", "Dust");
                     remove_subscriber_from_permission(&mut magician.permissions, "CanAttack", "Dust");
                     remove_subscriber_from_permission(&mut magician.permissions, "CanCloak", "Dust");
@@ -207,14 +201,15 @@ pub fn handle_magician_timers(ctx: &ReducerContext, timer: HandleMagicianTimersT
 
             MagicianState::Cloak => {
                 if tick_active_timer_and_check_expired(&mut magician, "Cloak", time) { // Checks if consume/use time is over, resets permissions and state accordingly
-                    magician.state = MagicianState::Default;
+                    try_transition_to_reload(&mut magician);
                     try_cloak(ctx, &mut magician); // Cloak performed at end of use time - Ensures grace period for preventing cloak effect interruption
                 }
             }
 
             MagicianState::Hypnosis => {
                 if tick_active_timer_and_check_expired(&mut magician, "Hypnosis", time) { // Checks if consume/use time is over, resets permissions and state accordingly
-                    magician.state = MagicianState::Default;
+                    try_transition_to_reload(&mut magician);
+
                     remove_subscriber_from_permission(&mut magician.permissions, "CanReload", "Hypnosis");
                     remove_subscriber_from_permission(&mut magician.permissions, "CanAttack", "Hypnosis");
                     remove_subscriber_from_permission(&mut magician.permissions, "CanCloak", "Hypnosis");
@@ -478,5 +473,15 @@ pub fn take_artifical_damage(ctx: &ReducerContext)
     if let Some(me) = me_option {
         let damage = create_damage_effect(25.0, 1.0);
         add_effects_to_table(ctx, vec![damage], me.id, me.id, me.game_id);
+    }
+}
+
+#[reducer]
+pub fn take_artifical_dust(ctx: &ReducerContext)
+{
+    let me_option = ctx.db.magician().identity().find(ctx.sender);
+    if let Some(me) = me_option {
+        let dust = create_dust_effect(2.5);
+        add_effects_to_table(ctx, vec![dust], me.id, me.id, me.game_id);
     }
 }

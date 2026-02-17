@@ -7,7 +7,7 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
-    const string SERVER_URL = "http://10.0.0.68:3001"; // For Self-Host Playable Version (LAN - Must Reget IP For New Networks): Use "http://10.0.0.68:3001" For Solo Deploy Testing & Use Cloudflare Quicktunnel URL; For Maincloud Milestone Playable Version Release: "https://maincloud.spacetimedb.com"; For Local Playable Version: "http://127.0.0.1:3000";
+    const string SERVER_URL = "http://10.0.0.68:3001"; // For Self-Host Playable Version (LAN - Must Reget IP For New Networks): Use "http://10.0.0.68:3001" For Solo Deploy Testing & Use Cloudflare Quicktunnel URL; For Maincloud Milestone Playable Version Release: "https://maincloud.spacetimedb.com"; For Local Playable Version: "http://127.0.0.1:3001";
     const string MODULE_NAME = "bash";
 
     public static event Action OnConnected;
@@ -21,7 +21,7 @@ public class GameManager : MonoBehaviour
     
     private void Start()
     {
-        //PlayerPrefs.DeleteAll();
+        PlayerPrefs.DeleteAll();
         
         if (Instance != null && Instance != this)
         {

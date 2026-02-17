@@ -11,6 +11,7 @@ public class MagicianController : MonoBehaviour
     [SerializeField] GameObject ThirdPersonCamPivot;
     [SerializeField] Canvas Crosshair;
     [SerializeField] MagicianHUDController MagicianHud;
+    [SerializeField] MagicianOutwardHudController MagicianOutwardHud;
 
     [Header("Tuning")]
     public float SendRateHz = 20f;
@@ -112,6 +113,7 @@ public class MagicianController : MonoBehaviour
             {
                 if (Effect.EffectType is EffectType.Invincible)
                     MagicianHud.HandleEffectAsTarget(Effect);
+                    // Also Set Outward Invincible Visual
             }
         }
     }
@@ -294,6 +296,9 @@ public class MagicianController : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.M))
             GameManager.Conn.Reducers.TakeArtificalDamage();
+
+        if (Input.GetKeyDown(KeyCode.L))
+            GameManager.Conn.Reducers.TakeArtificalDust();
     }
 
     public MovementRequest BuildMovementRequest()
@@ -517,23 +522,45 @@ public class MagicianController : MonoBehaviour
 
     public void HandleMagicianEffectInsert(EventContext context, PlayerEffect insertedEffect)
     {
-        if (!IsOwner)
-            return;
+        if (IsOwner) {
+            if (insertedEffect.TargetId == Id)
+                MagicianHud.HandleEffectAsTarget(insertedEffect);
 
-        if (insertedEffect.TargetId == Id)
-            MagicianHud.HandleEffectAsTarget(insertedEffect);
+            else if (insertedEffect.SenderId == Id)
+                MagicianHud.HandleEffectAsSender(insertedEffect);
+        }
 
-        else if (insertedEffect.SenderId == Id)
-            MagicianHud.HandleEffectAsSender(insertedEffect);
+        if (insertedEffect.TargetId == Id) {
+            if (insertedEffect.EffectType == EffectType.Dust)
+                MagicianOutwardHud.SetOutwardDustCloudActive(true);
+
+            else if (insertedEffect.EffectType == EffectType.Cloak)
+                return; // Set Invisible Outward Visual
+            
+            else if (insertedEffect.EffectType == EffectType.Invincible)
+                return; // Set Invincible Outward Visual - Remember To Also Set Inside Configure Because Invincible Insert Doesn't Always Get Registered Here
+        }
+        
     }
 
     public void HandleMagicianEffectDelete(EventContext context, PlayerEffect deletedEffect)
     {
-        if (!IsOwner)
-            return;
+        if (IsOwner) {
+            if (deletedEffect.TargetId == Id)
+                MagicianHud.HandleEffectRemoveAsTarget(deletedEffect);
+        }
 
-        if (deletedEffect.TargetId == Id)
-            MagicianHud.HandleEffectRemoveAsTarget(deletedEffect);
+        if (deletedEffect.TargetId == Id) {
+
+            if (deletedEffect.EffectType == EffectType.Dust)
+                MagicianOutwardHud.SetOutwardDustCloudActive(false);
+
+            else if (deletedEffect.EffectType == EffectType.Cloak)
+                return; // Unset Invisible Outward Visual
+            
+            else if (deletedEffect.EffectType == EffectType.Invincible)
+                return; // Unset Invincible Outward Visual
+        }
     }
 
     public void HandleMagicianEffectUpdate(EventContext context, PlayerEffect oldEffect, PlayerEffect newEffect)
@@ -541,13 +568,16 @@ public class MagicianController : MonoBehaviour
         if (!IsOwner)
             return;
 
-        if (newEffect.EffectType == EffectType.Damage || newEffect.EffectType == EffectType.Dust || newEffect.EffectType == EffectType.Stunned)
+        if (newEffect.EffectType == EffectType.Damage || newEffect.EffectType == EffectType.Stunned)
             return;
 
         ApplicationInformation oldInfo = oldEffect.EffectInfo.ApplicationInformation;
         ApplicationInformation newInfo = newEffect.EffectInfo.ApplicationInformation;
 
-        if (newInfo.EndTime - newInfo.CurrentTime < 2.0 && oldInfo.EndTime - oldInfo.CurrentTime > 2.0)
+        if (newEffect.EffectType == EffectType.Dust && newInfo.EndTime - newInfo.CurrentTime < 1.0 && oldInfo.EndTime - oldInfo.CurrentTime > 1.0)
+            MagicianHud.TryHudIconFlash(newEffect);
+
+        else if (newInfo.EndTime - newInfo.CurrentTime < 2.0 && oldInfo.EndTime - oldInfo.CurrentTime > 2.0)
             MagicianHud.TryHudIconFlash(newEffect);
     }
 

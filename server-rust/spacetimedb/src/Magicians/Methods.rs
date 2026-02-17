@@ -291,7 +291,7 @@ pub fn try_perform_dust(ctx: &ReducerContext, magician: &mut Magician, dust_info
 
     let hits: Vec<Raycast> = raycast_cone_match(ctx, spawn_point, cone_direction, dust_information.max_distance, dust_information.cone_half_angle_degrees); // Checks for a hit based on the rebuilt data (multi target - cone shape)
     for hit in hits {
-        let dust_effect = create_dust_effect(2.0);
+        let dust_effect = create_dust_effect(2.5);
         let effects: Vec<Effect> = vec![dust_effect];
         add_effects_to_table(ctx, effects, hit.hit_entity_id, magician.id, magician.game_id);
     }
@@ -506,4 +506,15 @@ pub fn try_find_stateless_timer<'a>(timers: &'a mut [StatelessTimer], key: &str)
         }
     }
     panic!("Timer not found: {}", key);
+}
+
+pub fn try_transition_to_reload(magician: &mut Magician) { // Switches to reload state automatically if no bullets
+    if magician.bullets.len() > 0 { 
+        magician.state = MagicianState::Default;
+    } 
+    
+    else {
+        magician.state = MagicianState::Reload;
+        add_subscriber_to_permission(&mut magician.permissions, "CanReload", "Reload");
+    }
 }

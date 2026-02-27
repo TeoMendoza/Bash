@@ -1,7 +1,7 @@
 use spacetimedb::{table, Identity, ScheduleAt};
 use crate::*;
 
-#[table(name = magician, public)]
+#[table(accessor = magician, public)]
 pub struct Magician {
     #[primary_key] pub identity: Identity,
     #[unique] #[auto_inc] pub id: u64,
@@ -24,7 +24,7 @@ pub struct Magician {
     pub bullet_capacity: u8,
 }
 
-#[table(name = move_all_magicians, scheduled(move_magicians))]
+#[table(accessor = move_all_magicians, scheduled(move_magicians))]
 pub struct MoveAllMagiciansTimer {
     #[primary_key] #[auto_inc] pub scheduled_id: u64,
     pub scheduled_at: ScheduleAt,
@@ -32,7 +32,7 @@ pub struct MoveAllMagiciansTimer {
     #[unique] pub game_id: u32, // One timer per game
 }
 
-#[table(name = gravity_magician, scheduled(apply_gravity_magician))]
+#[table(accessor = gravity_magician, scheduled(apply_gravity_magician))]
 pub struct GravityTimerMagician {
     #[primary_key] #[auto_inc] pub scheduled_id: u64,
     pub scheduled_at: ScheduleAt,
@@ -41,7 +41,7 @@ pub struct GravityTimerMagician {
     #[unique] pub game_id: u32, // One timer per game
 }
 
-#[table(name = handle_magician_timers_timer, scheduled(handle_magician_timers))]
+#[table(accessor = handle_magician_timers_timer, scheduled(handle_magician_timers))]
 pub struct HandleMagicianTimersTimer {
     #[primary_key] #[auto_inc] pub scheduled_id: u64,
     pub scheduled_at: ScheduleAt,
@@ -49,7 +49,7 @@ pub struct HandleMagicianTimersTimer {
     #[unique] pub game_id: u32, // One timer per game
 }
 
-#[table(name = handle_magician_stateless_timers_timer, scheduled(handle_magician_stateless_timers))]
+#[table(accessor = handle_magician_stateless_timers_timer, scheduled(handle_magician_stateless_timers))]
 pub struct HandleMagicianStatelessTimersTimer {
     #[primary_key] #[auto_inc] pub scheduled_id: u64,
     pub scheduled_at: ScheduleAt,

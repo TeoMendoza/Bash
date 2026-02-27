@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void TakeArtificalDamage()
         {
-            conn.InternalCallReducer(new Reducer.TakeArtificalDamage(), this.SetCallReducerFlags.TakeArtificalDamageFlags);
+            conn.InternalCallReducer(new Reducer.TakeArtificalDamage());
         }
 
         public bool InvokeTakeArtificalDamage(ReducerEventContext ctx, Reducer.TakeArtificalDamage args)
@@ -49,11 +49,5 @@ namespace SpacetimeDB.Types
         {
             string IReducerArgs.ReducerName => "take_artifical_damage";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags TakeArtificalDamageFlags;
-        public void TakeArtificalDamage(CallReducerFlags flags) => TakeArtificalDamageFlags = flags;
     }
 }

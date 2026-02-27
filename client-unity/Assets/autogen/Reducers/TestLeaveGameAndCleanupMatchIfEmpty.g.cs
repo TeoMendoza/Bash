@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void TestLeaveGameAndCleanupMatchIfEmpty()
         {
-            conn.InternalCallReducer(new Reducer.TestLeaveGameAndCleanupMatchIfEmpty(), this.SetCallReducerFlags.TestLeaveGameAndCleanupMatchIfEmptyFlags);
+            conn.InternalCallReducer(new Reducer.TestLeaveGameAndCleanupMatchIfEmpty());
         }
 
         public bool InvokeTestLeaveGameAndCleanupMatchIfEmpty(ReducerEventContext ctx, Reducer.TestLeaveGameAndCleanupMatchIfEmpty args)
@@ -49,11 +49,5 @@ namespace SpacetimeDB.Types
         {
             string IReducerArgs.ReducerName => "test_leave_game_and_cleanup_match_if_empty";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags TestLeaveGameAndCleanupMatchIfEmptyFlags;
-        public void TestLeaveGameAndCleanupMatchIfEmpty(CallReducerFlags flags) => TestLeaveGameAndCleanupMatchIfEmptyFlags = flags;
     }
 }

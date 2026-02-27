@@ -3,7 +3,7 @@ use crate::*;
 
 #[reducer]
 pub fn handle_movement_request_magician(ctx: &ReducerContext, request: MovementRequest) { // Handles player request for movement and looking
-    let magician_option = ctx.db.magician().identity().find(ctx.sender);
+    let magician_option = ctx.db.magician().identity().find(ctx.sender());
     if magician_option.is_none() { return; }
     let mut magician = magician_option.unwrap();
 
@@ -75,7 +75,7 @@ pub fn handle_movement_request_magician(ctx: &ReducerContext, request: MovementR
 
 #[reducer]
 pub fn handle_action_change_request_magician(ctx: &ReducerContext, request: ActionRequestMagician) { // Handles player request for action state - State cases: full block, interuptable, interuptable with cooldown
-    let magician_option = ctx.db.magician().identity().find(ctx.sender);
+    let magician_option = ctx.db.magician().identity().find(ctx.sender());
     if magician_option.is_none() { return; }
     let mut magician = magician_option.unwrap();
 
@@ -145,7 +145,7 @@ pub fn handle_action_change_request_magician(ctx: &ReducerContext, request: Acti
 
 #[reducer]
 pub fn handle_stateless_action_request_magician(ctx: &ReducerContext, request: StatelessActionRequestMagician) { // Handles player request for state that does not have a consume/use time
-    let magician_option = ctx.db.magician().identity().find(ctx.sender);
+    let magician_option = ctx.db.magician().identity().find(ctx.sender());
     if magician_option.is_none() { return; }
     let mut magician = magician_option.unwrap();
 
@@ -386,7 +386,7 @@ pub fn move_magicians_lag_test(ctx: &ReducerContext, timer: MoveAllMagiciansTime
 
 #[reducer]
 pub fn hypnotise(ctx: &ReducerContext, camera_info: HypnosisCameraInformation) { // Handles hypnosis ability camera information and subsequent effect application
-    let magician_option = ctx.db.magician().identity().find(ctx.sender);
+    let magician_option = ctx.db.magician().identity().find(ctx.sender());
     if magician_option.is_none() { return; }
     let mut magician = magician_option.unwrap();
 
@@ -421,7 +421,7 @@ pub fn hypnotise(ctx: &ReducerContext, camera_info: HypnosisCameraInformation) {
                 
                 if let Some(stunned_effect) = stunned_effect_option {
                     undo_and_delete_stunned_effect_magician(ctx, &mut stunned_magician, stunned_effect.id);
-                    ctx.db.magician().id().update(stunned_magician);
+                    ctx.db.magician().identity().update(stunned_magician);
                 }
             }
             
@@ -452,7 +452,7 @@ pub fn hypnotise(ctx: &ReducerContext, camera_info: HypnosisCameraInformation) {
                 
                 if let Some(stunned_effect) = stunned_effect_option {
                     undo_and_delete_stunned_effect_magician(ctx, &mut stunned_magician, stunned_effect.id);
-                    ctx.db.magician().id().update(stunned_magician);
+                    ctx.db.magician().identity().update(stunned_magician);
                 }  
             }
             
@@ -469,7 +469,7 @@ pub fn hypnotise(ctx: &ReducerContext, camera_info: HypnosisCameraInformation) {
 #[reducer]
 pub fn take_artifical_damage(ctx: &ReducerContext)
 {
-    let me_option = ctx.db.magician().identity().find(ctx.sender);
+    let me_option = ctx.db.magician().identity().find(ctx.sender());
     if let Some(me) = me_option {
         let damage = create_damage_effect(25.0, 1.0);
         add_effects_to_table(ctx, vec![damage], me.id, me.id, me.game_id);
@@ -479,7 +479,7 @@ pub fn take_artifical_damage(ctx: &ReducerContext)
 #[reducer]
 pub fn take_artifical_dust(ctx: &ReducerContext)
 {
-    let me_option = ctx.db.magician().identity().find(ctx.sender);
+    let me_option = ctx.db.magician().identity().find(ctx.sender());
     if let Some(me) = me_option {
         let dust = create_dust_effect(2.5);
         add_effects_to_table(ctx, vec![dust], me.id, me.id, me.game_id);

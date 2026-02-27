@@ -11,10 +11,10 @@ pub fn raycast_match(ctx: &ReducerContext, ray_origin: DbVector3, ray_direction:
 
     let ray_direction_unit: DbVector3 = normalize_small_vector(ray_direction, DbVector3 { x: 0.0, y: 0.0, z: 1.0 });
 
-    let magician_option = ctx.db.magician().identity().find(ctx.sender);
+    let magician_option = ctx.db.magician().identity().find(ctx.sender());
     if let Some(magician) = magician_option {
         for other in ctx.db.magician().game_id().filter(magician.game_id) {
-            if other.identity == ctx.sender { continue; }
+            if other.identity == ctx.sender() { continue; }
 
             let hit: Raycast = raycast_complex_collider(ray_origin, ray_direction_unit, best_distance, &other.collider, other.position, to_radians(other.rotation.yaw), RaycastHitType::Magician, other.id);
             if hit.hit && hit.hit_distance < best_distance {
@@ -49,10 +49,10 @@ pub fn raycast_cone_match(ctx: &ReducerContext, ray_origin: DbVector3, ray_forwa
     let auto_hit_distance: f32 = 1.25;
     let mut hits: Vec<Raycast> = Vec::new();
 
-    let magician_option = ctx.db.magician().identity().find(ctx.sender);
+    let magician_option = ctx.db.magician().identity().find(ctx.sender());
     if let Some(magician) = magician_option { 
         for other in ctx.db.magician().game_id().filter(magician.game_id) {
-            if other.identity == ctx.sender { continue; }
+            if other.identity == ctx.sender() { continue; }
 
             let other_yaw_radians = to_radians(other.rotation.yaw);
             let other_center_world = get_collider_center_world(&other.collider, other.position, other_yaw_radians);

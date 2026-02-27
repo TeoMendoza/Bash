@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void TakeArtificalDust()
         {
-            conn.InternalCallReducer(new Reducer.TakeArtificalDust(), this.SetCallReducerFlags.TakeArtificalDustFlags);
+            conn.InternalCallReducer(new Reducer.TakeArtificalDust());
         }
 
         public bool InvokeTakeArtificalDust(ReducerEventContext ctx, Reducer.TakeArtificalDust args)
@@ -49,11 +49,5 @@ namespace SpacetimeDB.Types
         {
             string IReducerArgs.ReducerName => "take_artifical_dust";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags TakeArtificalDustFlags;
-        public void TakeArtificalDust(CallReducerFlags flags) => TakeArtificalDustFlags = flags;
     }
 }

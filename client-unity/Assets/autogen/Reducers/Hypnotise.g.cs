@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void Hypnotise(SpacetimeDB.Types.HypnosisCameraInformation cameraInfo)
         {
-            conn.InternalCallReducer(new Reducer.Hypnotise(cameraInfo), this.SetCallReducerFlags.HypnotiseFlags);
+            conn.InternalCallReducer(new Reducer.Hypnotise(cameraInfo));
         }
 
         public bool InvokeHypnotise(ReducerEventContext ctx, Reducer.Hypnotise args)
@@ -63,11 +63,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "hypnotise";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags HypnotiseFlags;
-        public void Hypnotise(CallReducerFlags flags) => HypnotiseFlags = flags;
     }
 }

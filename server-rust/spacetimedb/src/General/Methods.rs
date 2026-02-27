@@ -20,7 +20,7 @@ pub fn cleanup_on_disconnect_or_death(ctx: &ReducerContext, magician: &mut Magic
     for mut other in ctx.db.magician().game_id().filter(magician.game_id) {
         if let Some(index) = other.collision_entries.iter().position(|entry| *entry == collision_entry) {
             other.collision_entries.swap_remove(index);
-            ctx.db.magician().id().update(other);
+            ctx.db.magician().identity().update(other);
         }
     }
 
@@ -55,7 +55,7 @@ pub fn remove_player_info_from_game(ctx: &ReducerContext, game_id: u32) { // Dec
         }
 
         let scoreboard_players = &mut game.scoreboard.players;
-        if let Some(index) = scoreboard_players.iter().position(|p| p.identity == ctx.sender) {
+        if let Some(index) = scoreboard_players.iter().position(|p| p.identity == ctx.sender()) {
             scoreboard_players.swap_remove(index);
         }
 

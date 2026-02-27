@@ -9,7 +9,7 @@ pub fn test_join_and_start_game_single_player(ctx: &ReducerContext) {
         .db
         .logged_in_players()
         .identity()
-        .find(ctx.sender)
+        .find(ctx.sender())
         .expect("Player must be logged in");
 
     let mut game: Game = match ctx.db.game().in_progress().filter(false).next() {
@@ -101,7 +101,7 @@ pub fn test_join_and_start_game_single_player(ctx: &ReducerContext) {
 
 #[reducer]
 pub fn test_leave_game_and_cleanup_match_if_empty(ctx: &ReducerContext) {
-    let magician_option = ctx.db.magician().identity().find(ctx.sender);
+    let magician_option = ctx.db.magician().identity().find(ctx.sender());
     if magician_option.is_none() {
         return;
     }
@@ -110,7 +110,7 @@ pub fn test_leave_game_and_cleanup_match_if_empty(ctx: &ReducerContext) {
     let game_id = magician.game_id;
 
     cleanup_on_disconnect_or_death(ctx, &mut magician);
-    ctx.db.magician().identity().delete(ctx.sender);
+    ctx.db.magician().identity().delete(ctx.sender());
 
     let mut game = ctx.db.game().id().find(game_id).expect("Game not found");
     if game.current_players > 0 {

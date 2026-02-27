@@ -107,7 +107,7 @@ pub fn undo_hypnosis_effect_magician(ctx: &ReducerContext, magician: &mut Magici
             let stunned_magician_option = ctx.db.magician().id().find(last_target_id); 
             if let Some(mut stunned_magician) = stunned_magician_option {
                 undo_and_delete_stunned_effect_magician(ctx, &mut stunned_magician, stunned_effect.id); // If target still exists, undoes and removes stun effect from db
-                ctx.db.magician().id().update(stunned_magician);
+                ctx.db.magician().identity().update(stunned_magician);
             }
         } 
     }

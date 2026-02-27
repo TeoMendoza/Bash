@@ -80,7 +80,7 @@ pub fn handle_player_effects_table(ctx: &ReducerContext, timer: PlayerEffectsTab
         }
         
         if ctx.db.magician().id().find(target_id).is_some() {
-            ctx.db.magician().id().update(target); // Updates target of effect - Recheck existence because effect can kill them in which case they will not exist anymore
+            ctx.db.magician().identity().update(target); // Updates target of effect - Recheck existence because effect can kill them in which case they will not exist anymore
         }
     }
 }

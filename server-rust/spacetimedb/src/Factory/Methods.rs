@@ -56,7 +56,7 @@ pub fn create_magician(config: MagicianConfig) -> Magician { // Creates new magi
         bullets: bullets,
         bullet_capacity: bullet_capacity,
         collider: MagicianIdleCollider(),
-        collision_entries: vec![CollisionEntry { entry_type: CollisionEntryType::Map, id: 1 }], // Auto registers floor as collision entry
+        collision_entries: vec![CollisionEntry { entry_type: CollisionEntryType::Map, id: 1 }, CollisionEntry { entry_type: CollisionEntryType::Map, id: 2 }], // Auto registers initial possible collisions (Pipe & Pipe Platform)
         is_colliding: false,
     };
 

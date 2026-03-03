@@ -5,10 +5,58 @@ use crate::*;
 pub fn init(ctx: &ReducerContext) // Adds map pieces to database with colliders (map pieces are static)
 {
     log::info!("Initializing...");
+
+    ctx.db.map().insert(Map {id: 0, name: "Pipe".to_string(), collider: pipe_collider() });
+    ctx.db.map().insert(Map {id: 0, name: "Pipe Platform".to_string(), collider: pipe_platform_collider() });
+    ctx.db.map().insert(Map {id: 0, name: "Pipe Ramp".to_string(), collider: pipe_ramp_collider() });
+    ctx.db.map().insert(Map {id: 0, name: "Pipe Ramp 2".to_string(), collider: pipe_ramp_2_collider() });
+    
+    ctx.db.map().insert(Map {id: 0, name: "Floater 1".to_string(), collider: floater_1_collider() });
+    ctx.db.map().insert(Map {id: 0, name: "Floater 2".to_string(), collider: floater_2_collider() });
     ctx.db.map().insert(Map {id: 0, name: "Floor".to_string(), collider: floor_collider() });
-    ctx.db.map().insert(Map {id: 0, name: "Ramp".to_string(), collider: ramp_collider() });
-    ctx.db.map().insert(Map {id: 0, name: "Ramp2".to_string(), collider: ramp_2_collider() });
+
+    ctx.db.map().insert(Map {id: 0, name: "Left Ramp".to_string(), collider: left_ramp_collider() });
+    ctx.db.map().insert(Map {id: 0, name: "Left Ramp 2".to_string(), collider: left_ramp_2_collider() });
+
+    ctx.db.map().insert(Map {id: 0, name: "Map Box 1".to_string(), collider: map_box_1_collider() });
+    ctx.db.map().insert(Map {id: 0, name: "Map Box 2".to_string(), collider: map_box_2_collider() });
+    ctx.db.map().insert(Map {id: 0, name: "Map Box 3".to_string(), collider: map_box_3_collider() });
+    ctx.db.map().insert(Map {id: 0, name: "Map Box 4".to_string(), collider: map_box_4_collider() });
+
+    ctx.db.map().insert(Map {id: 0, name: "Map Box Edge 1".to_string(), collider: map_box_edge_1_collider() });
+    ctx.db.map().insert(Map {id: 0, name: "Map Box Edge 1 - Jump 1".to_string(), collider: map_box_edge_1_jump_1_collider() });
+    ctx.db.map().insert(Map {id: 0, name: "Map Box Edge 1 - Jump 2".to_string(), collider: map_box_edge_1_jump_2_collider() });
+    ctx.db.map().insert(Map {id: 0, name: "Map Box Edge 1 - Jump 3".to_string(), collider: map_box_edge_1_jump_3_collider() });
+
+    ctx.db.map().insert(Map {id: 0, name: "Map Box Edge 2".to_string(), collider: map_box_edge_2_collider() });
+    ctx.db.map().insert(Map {id: 0, name: "Map Box Edge 2 - Jump 1".to_string(), collider: map_box_edge_2_jump_1_collider() });
+    ctx.db.map().insert(Map {id: 0, name: "Map Box Edge 2 - Jump 2".to_string(), collider: map_box_edge_2_jump_2_collider() });
+    ctx.db.map().insert(Map {id: 0, name: "Map Box Edge 2 - Jump 3".to_string(), collider: map_box_edge_2_jump_3_collider() });
+
+    ctx.db.map().insert(Map {id: 0, name: "Map Box Edge 3".to_string(), collider: map_box_edge_3_collider() });
+    ctx.db.map().insert(Map {id: 0, name: "Map Box Edge 3 - Jump 1".to_string(), collider: map_box_edge_3_jump_1_collider() });
+    ctx.db.map().insert(Map {id: 0, name: "Map Box Edge 3 - Jump 2".to_string(), collider: map_box_edge_3_jump_2_collider() });
+    ctx.db.map().insert(Map {id: 0, name: "Map Box Edge 3 - Jump 3".to_string(), collider: map_box_edge_3_jump_3_collider() });
+
+    ctx.db.map().insert(Map {id: 0, name: "Map Box Edge 4".to_string(), collider: map_box_edge_4_collider() });
+    ctx.db.map().insert(Map {id: 0, name: "Map Box Edge 4 - Jump 1".to_string(), collider: map_box_edge_4_jump_1_collider() });
+    ctx.db.map().insert(Map {id: 0, name: "Map Box Edge 4 - Jump 2".to_string(), collider: map_box_edge_4_jump_2_collider() });
+    ctx.db.map().insert(Map {id: 0, name: "Map Box Edge 4 - Jump 3".to_string(), collider: map_box_edge_4_jump_3_collider() });
+
+    ctx.db.map().insert(Map {id: 0, name: "Map Long Box 1".to_string(), collider: map_long_box_1_collider() });
+    ctx.db.map().insert(Map {id: 0, name: "Map Long Box 2".to_string(), collider: map_long_box_2_collider() });
+
+    ctx.db.map().insert(Map {id: 0, name: "Map Long Box Ramp 1".to_string(), collider: map_long_box_ramp_1_collider() });
+    ctx.db.map().insert(Map {id: 0, name: "Map Long Box Ramp 2".to_string(), collider: map_long_box_ramp_2_collider() });
+
+    ctx.db.map().insert(Map {id: 0, name: "Middle Ramp".to_string(), collider: middle_ramp_collider() });
+    ctx.db.map().insert(Map {id: 0, name: "Middle Ramp 2".to_string(), collider: middle_ramp_2_collider() });
+
     ctx.db.map().insert(Map {id: 0, name: "Platform".to_string(), collider: platform_collider() });
+    ctx.db.map().insert(Map {id: 0, name: "Platform 2".to_string(), collider: platform_2_collider() });
+
+    ctx.db.map().insert(Map {id: 0, name: "Right Ramp".to_string(), collider: right_ramp_collider() });
+    ctx.db.map().insert(Map {id: 0, name: "Right Ramp 2".to_string(), collider: right_ramp_2_collider() });
 }
 
 #[reducer(client_connected)]
@@ -89,7 +137,7 @@ pub fn try_join_game(ctx: &ReducerContext) // Adds player to first unstarted gam
         }
 
         let effects = vec![create_invincible_effect(5.0)];
-        let magician_config = MagicianConfig {player, game_id: game.id, position: DbVector3 { x: 0.0, y: 0.0, z: 0.0 }};
+        let magician_config = MagicianConfig {player, game_id: game.id, position: DbVector3 { x: 0.0, y: 6.75, z: 0.0 }};
         let magician = create_magician(magician_config);
 
         let inserted_magician = ctx.db.magician().insert(magician);

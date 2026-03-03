@@ -31,8 +31,8 @@ Transform:
   m_GameObject: {fileID: 2605570145556025949}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0, y: 2.15, z: 10}
-  m_LocalScale: {x: 4.75, y: 0.5, z: 3.75}
+  m_LocalPosition: {x: -0, y: 2, z: 20}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -164,54 +164,54 @@ MonoBehaviour:
   - m_Vertices: 0b0000000e00000012000000
   m_SharedTextures: []
   m_Positions:
-  - {x: -0.5, y: -0.5, z: 0.5}
-  - {x: 0.5, y: -0.5, z: 0.5}
-  - {x: -0.5, y: 0.5, z: 0.5}
-  - {x: 0.5, y: 0.5, z: 0.5}
-  - {x: 0.5, y: -0.5, z: 0.5}
-  - {x: 0.5, y: -0.5, z: -0.5}
-  - {x: 0.5, y: 0.5, z: 0.5}
-  - {x: 0.5, y: 0.5, z: -0.5}
-  - {x: 0.5, y: -0.5, z: -0.5}
-  - {x: -0.5, y: -0.5, z: -0.5}
-  - {x: 0.5, y: 0.5, z: -0.5}
-  - {x: -0.5, y: 0.5, z: -0.5}
-  - {x: -0.5, y: -0.5, z: -0.5}
-  - {x: -0.5, y: -0.5, z: 0.5}
-  - {x: -0.5, y: 0.5, z: -0.5}
-  - {x: -0.5, y: 0.5, z: 0.5}
-  - {x: -0.5, y: 0.5, z: 0.5}
-  - {x: 0.5, y: 0.5, z: 0.5}
-  - {x: -0.5, y: 0.5, z: -0.5}
-  - {x: 0.5, y: 0.5, z: -0.5}
-  - {x: -0.5, y: -0.5, z: -0.5}
-  - {x: 0.5, y: -0.5, z: -0.5}
-  - {x: -0.5, y: -0.5, z: 0.5}
-  - {x: 0.5, y: -0.5, z: 0.5}
+  - {x: -4, y: -2, z: 1.875}
+  - {x: 4, y: -2, z: 1.875}
+  - {x: -4, y: 2, z: 1.875}
+  - {x: 4, y: 2, z: 1.875}
+  - {x: 4, y: -2, z: 1.875}
+  - {x: 4, y: -2, z: -1.875}
+  - {x: 4, y: 2, z: 1.875}
+  - {x: 4, y: 2, z: -1.875}
+  - {x: 4, y: -2, z: -1.875}
+  - {x: -4, y: -2, z: -1.875}
+  - {x: 4, y: 2, z: -1.875}
+  - {x: -4, y: 2, z: -1.875}
+  - {x: -4, y: -2, z: -1.875}
+  - {x: -4, y: -2, z: 1.875}
+  - {x: -4, y: 2, z: -1.875}
+  - {x: -4, y: 2, z: 1.875}
+  - {x: -4, y: 2, z: 1.875}
+  - {x: 4, y: 2, z: 1.875}
+  - {x: -4, y: 2, z: -1.875}
+  - {x: 4, y: 2, z: -1.875}
+  - {x: -4, y: -2, z: -1.875}
+  - {x: 4, y: -2, z: -1.875}
+  - {x: -4, y: -2, z: 1.875}
+  - {x: 4, y: -2, z: 1.875}
   m_Textures0:
-  - {x: 1, y: 0}
-  - {x: 0, y: 0}
-  - {x: 1, y: 1}
+  - {x: 8, y: -3}
+  - {x: 0, y: -3}
+  - {x: 8, y: 1}
   - {x: 0, y: 1}
-  - {x: 1, y: 0}
-  - {x: 0, y: 0}
-  - {x: 1, y: 1}
+  - {x: 3.75, y: -3}
+  - {x: 0, y: -3}
+  - {x: 3.75, y: 1}
   - {x: 0, y: 1}
-  - {x: 1, y: 0}
-  - {x: 0, y: 0}
-  - {x: 1, y: 1}
+  - {x: 8, y: -3}
+  - {x: 0, y: -3}
+  - {x: 8, y: 1}
   - {x: 0, y: 1}
-  - {x: 1, y: 0}
-  - {x: 0, y: 0}
-  - {x: 1, y: 1}
+  - {x: 3.75, y: -3}
+  - {x: 0, y: -3}
+  - {x: 3.75, y: 1}
   - {x: 0, y: 1}
   - {x: 0, y: 1}
-  - {x: 1, y: 1}
-  - {x: 0, y: 0}
-  - {x: 1, y: 0}
-  - {x: 1, y: 0}
-  - {x: 0, y: 0}
-  - {x: 1, y: 1}
+  - {x: 8, y: 1}
+  - {x: 0, y: -2.75}
+  - {x: 8, y: -2.75}
+  - {x: 8, y: -2.75}
+  - {x: 0, y: -2.75}
+  - {x: 8, y: 1}
   - {x: 0, y: 1}
   m_Textures2: []
   m_Textures3: []
@@ -249,7 +249,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 7761
+  m_VersionIndex: 7875
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -269,8 +269,8 @@ MonoBehaviour:
   m_Shape:
     rid: 8727696102544375888
   m_ShapeRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_UnmodifiedMeshVersion: 7761
-  m_Size: {x: 1, y: 1, z: 1}
+  m_UnmodifiedMeshVersion: 7872
+  m_Size: {x: 8, y: 4, z: 3.75}
   m_LocalCenter: {x: 0, y: 0, z: 0}
   references:
     version: 2
@@ -301,7 +301,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: -6202392741857895490, guid: a75d78bdb0451453691f096c0403db81, type: 3}
+  - {fileID: 2100000, guid: c22777d6e868e4f2fb421913386b154e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

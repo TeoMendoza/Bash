@@ -1,0 +1,58 @@
+use crate::*;
+
+pub static MAP_BOX_3_CONVEX_HULL0_VERTICES: &[DbVector3] = &[
+    DbVector3 { x: 6.5, y: 0.0, z: -5.5 },
+    DbVector3 { x: 10.5, y: 0.0, z: -5.5 },
+    DbVector3 { x: 6.5, y: 4.0, z: -5.5 },
+    DbVector3 { x: 10.5, y: 4.0, z: -5.5 },
+    DbVector3 { x: 10.5, y: 0.0, z: -9.5 },
+    DbVector3 { x: 10.5, y: 4.0, z: -9.5 },
+    DbVector3 { x: 6.5, y: 0.0, z: -9.5 },
+    DbVector3 { x: 6.5, y: 4.0, z: -9.5 },
+];
+
+pub static MAP_BOX_3_CONVEX_HULL0_TRIANGLE_INDICES_LOCAL: &[i32] = &[
+    0,
+    1,
+    2,
+    5,
+    1,
+    4,
+    1,
+    0,
+    4,
+    0,
+    2,
+    7,
+    2,
+    5,
+    7,
+    5,
+    4,
+    7,
+    1,
+    5,
+    3,
+    5,
+    2,
+    3,
+    2,
+    1,
+    3,
+    4,
+    0,
+    6,
+    0,
+    7,
+    6,
+    7,
+    4,
+    6,
+];
+
+pub fn map_box_3_collider() -> ComplexCollider {
+    let map_box_3_convex_hull_0: ConvexHullCollider = ConvexHullCollider { vertices_local: MAP_BOX_3_CONVEX_HULL0_VERTICES.to_vec(), triangle_indices_local: MAP_BOX_3_CONVEX_HULL0_TRIANGLE_INDICES_LOCAL.to_vec(), margin: 0.0 };
+    let plane_convex_hulls: Vec<ConvexHullCollider> = vec![map_box_3_convex_hull_0];
+    ComplexCollider { convex_hulls: plane_convex_hulls, center_point: DbVector3 { x: 8.5, y: 2.0, z: -7.5 } }
+}
+

@@ -25,6 +25,8 @@ public class MatchManager : MonoBehaviour
     [SerializeField] TextMeshProUGUI GameTime;
     [SerializeField] List<TextMeshProUGUI> ScoreboardSlots;
 
+    
+
     [Header("Match State")]
     public Timestamp RespawnAtTimestamp;
     bool HasRespawnAt;
@@ -47,6 +49,7 @@ public class MatchManager : MonoBehaviour
     MagicianController? LocalMagician = null;
 
     public Dictionary<uint, MapPiece> MapPieces = new();
+    [SerializeField] GameObject MapContainer;
 
     void Awake()
     {
@@ -234,9 +237,10 @@ public class MatchManager : MonoBehaviour
             if (!TryFindMapPrefab(MapPiece.Name, out MapPiece MatchingPrefab))
                 continue;
 
-            MapPiece Prefab = Instantiate(MatchingPrefab);
-            Prefab.Initialize(MapPiece);
-            MapPieces.Add(MapPieceId, Prefab);
+            MapPiece MapPrefab = Instantiate(MatchingPrefab);
+            MapPrefab.transform.SetParent(MapContainer.transform, false);
+            MapPrefab.Initialize(MapPiece);
+            MapPieces.Add(MapPieceId, MapPrefab);
         }
     }
 

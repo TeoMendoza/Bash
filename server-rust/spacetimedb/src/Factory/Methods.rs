@@ -43,8 +43,8 @@ pub fn create_magician(config: MagicianConfig) -> Magician { // Creates new magi
             PermissionEntry { key: "Invincibled".to_string(), subscribers: Vec::new() },
         ],    
         timers: vec![
-            Timer { name: "Attack".to_string(), state: TimerState::Usable, cooldown_time: 0.5, use_finished_time: 0.5, current_time: 0.0 },
-            Timer { name: "Reload".to_string(), state: TimerState::Usable, cooldown_time: 2.2, use_finished_time: 2.2, current_time: 0.0 },
+            Timer { name: "Attack".to_string(), state: TimerState::Usable, cooldown_time: 0.65, use_finished_time: 0.65, current_time: 0.0 },
+            Timer { name: "Reload".to_string(), state: TimerState::Usable, cooldown_time: 2.0, use_finished_time: 2.0, current_time: 0.0 },
             Timer { name: "Dust".to_string(), state: TimerState::Usable, cooldown_time: 10.0, use_finished_time: 2.4, current_time: 0.0 },
             Timer { name: "Cloak".to_string(), state: TimerState::Usable, cooldown_time: 20.0, use_finished_time: 1.5, current_time: 0.0 },
             Timer { name: "Hypnosis".to_string(), state: TimerState::Usable, cooldown_time: 20.0, use_finished_time: 2.0, current_time: 0.0 },
@@ -56,7 +56,7 @@ pub fn create_magician(config: MagicianConfig) -> Magician { // Creates new magi
         bullets: bullets,
         bullet_capacity: bullet_capacity,
         collider: MagicianIdleCollider(),
-        collision_entries: vec![CollisionEntry { entry_type: CollisionEntryType::Map, id: 1 }, CollisionEntry { entry_type: CollisionEntryType::Map, id: 2 }], // Auto registers initial possible collisions (Pipe & Pipe Platform)
+        collision_entries: vec![CollisionEntry { entry_type: CollisionEntryType::Map, id: 1 }, CollisionEntry { entry_type: CollisionEntryType::Map, id: 2 }, CollisionEntry { entry_type: CollisionEntryType::Map, id: 3 }], // Auto registers initial possible collisions (Pipe & Pipe Platform)
         is_colliding: false,
     };
 

@@ -50,7 +50,12 @@ pub fn handle_movement_request_magician(ctx: &ReducerContext, request: MovementR
         let world_x: f32 = cos_yaw * local_x + sin_yaw * local_z;
         let world_z: f32 = -sin_yaw * local_x + cos_yaw * local_z;
 
-        magician.requested_velocity = DbVector3 { x: world_x, y: magician.requested_velocity.y, z: world_z }; // Converts where player is looking into properly adjusted world speeds
+
+        magician.requested_velocity = DbVector3 { x: world_x * speed_mutiplier, y: magician.requested_velocity.y, z: world_z * speed_mutiplier}; 
+
+        if taroted {
+            magician.requested_velocity = DbVector3 { x: magician.requested_velocity.x * -1.0, y: magician.requested_velocity.y, z: magician.requested_velocity.z * -1.0 }
+        }
     }
 
     if is_permission_unblocked(&magician.permissions, "CanJump") && request.jump && stunned == false {
@@ -69,7 +74,6 @@ pub fn handle_movement_request_magician(ctx: &ReducerContext, request: MovementR
         remove_subscriber_from_permission(&mut magician.permissions, "CanRun", "Crouch"); // Sprint permission block removed
     }
 
-    magician.requested_velocity = if taroted { DbVector3 { x: magician.requested_velocity.x * speed_mutiplier * -1.0, y: magician.requested_velocity.y, z: magician.requested_velocity.z * speed_mutiplier -1.0 } } else { DbVector3 { x: magician.requested_velocity.x * speed_mutiplier, y: magician.requested_velocity.y, z: magician.requested_velocity.z * speed_mutiplier } }; // Reverses movement if taroted
     ctx.db.magician().identity().update(magician);
 }
 
@@ -303,7 +307,7 @@ pub fn move_magicians(ctx: &ReducerContext, timer: MoveAllMagiciansTimer) { // H
     //let reducer_timer = log_stopwatch::LogStopwatch::new("Move Magicians Reducer Completed");
     let time: f32 = timer.tick_rate;
     let min_time_step: f32 = 1e-4;
-    let max_substeps: i32 = 8; // Splits work into repeated smaller work to reduce phasing
+    let max_substeps: i32 = 16; // Splits work into repeated smaller work to reduce phasing
 
     for mut magician in ctx.db.magician().game_id().filter(timer.game_id) {
         let was_grounded: bool = magician.kinematic_information.grounded; // Store previous tick grounded data - Used to prevent jitter switching between grounded and falling due to collision response

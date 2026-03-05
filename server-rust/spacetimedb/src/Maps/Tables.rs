@@ -7,3 +7,11 @@ pub struct Map {
     #[unique] pub name: String, // Used to link to prefab on client side
     pub collider: ComplexCollider,
 }
+
+
+#[table(accessor = map_respawn_points, public)]
+pub struct MapRespawnPoint {
+    #[primary_key] #[auto_inc] pub id: u64,
+    #[unique] pub name: String,
+    #[unique] pub position: DbVector3
+}

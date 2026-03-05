@@ -1,4 +1,4 @@
-use spacetimedb::{reducer, ReducerContext, ScheduleAt, Table, TimeDuration};
+use spacetimedb::{ReducerContext, ScheduleAt, Table, TimeDuration, rand::Rng, reducer};
 use crate::*;
 
 #[reducer(init)] // Init gets called at DB publish
@@ -8,13 +8,14 @@ pub fn init(ctx: &ReducerContext) // Adds map pieces to database with colliders 
 
     ctx.db.map().insert(Map {id: 0, name: "Pipe".to_string(), collider: pipe_collider() });
     ctx.db.map().insert(Map {id: 0, name: "Pipe Platform".to_string(), collider: pipe_platform_collider() });
+    ctx.db.map().insert(Map {id: 0, name: "Floor".to_string(), collider: floor_collider() });
+
     ctx.db.map().insert(Map {id: 0, name: "Pipe Ramp".to_string(), collider: pipe_ramp_collider() });
     ctx.db.map().insert(Map {id: 0, name: "Pipe Ramp 2".to_string(), collider: pipe_ramp_2_collider() });
     
     ctx.db.map().insert(Map {id: 0, name: "Floater 1".to_string(), collider: floater_1_collider() });
     ctx.db.map().insert(Map {id: 0, name: "Floater 2".to_string(), collider: floater_2_collider() });
-    ctx.db.map().insert(Map {id: 0, name: "Floor".to_string(), collider: floor_collider() });
-
+    
     ctx.db.map().insert(Map {id: 0, name: "Left Ramp".to_string(), collider: left_ramp_collider() });
     ctx.db.map().insert(Map {id: 0, name: "Left Ramp 2".to_string(), collider: left_ramp_2_collider() });
 
@@ -57,6 +58,13 @@ pub fn init(ctx: &ReducerContext) // Adds map pieces to database with colliders 
 
     ctx.db.map().insert(Map {id: 0, name: "Right Ramp".to_string(), collider: right_ramp_collider() });
     ctx.db.map().insert(Map {id: 0, name: "Right Ramp 2".to_string(), collider: right_ramp_2_collider() });
+
+
+    ctx.db.map_respawn_points().insert(MapRespawnPoint { id: 0, name: "Center".to_string(), position: DbVector3 { x: 0.0, y: 6.75, z: 0.0 }});
+    ctx.db.map_respawn_points().insert(MapRespawnPoint { id: 0, name: "Top Right".to_string(), position: DbVector3 { x: 20.0, y: 0.0, z: 20.0 }});
+    ctx.db.map_respawn_points().insert(MapRespawnPoint { id: 0, name: "Top Left".to_string(), position: DbVector3 { x: -20.0, y: 0.0, z: 20.0 }});
+    ctx.db.map_respawn_points().insert(MapRespawnPoint { id: 0, name: "Bottom Left".to_string(), position: DbVector3 { x: -20.0, y: 0.0, z: -20.0 }});
+    ctx.db.map_respawn_points().insert(MapRespawnPoint { id: 0, name: "Bottom Right".to_string(), position: DbVector3 { x: 20.0, y: 0.0, z: -20.0 }});
 }
 
 #[reducer(client_connected)]
@@ -137,7 +145,8 @@ pub fn try_join_game(ctx: &ReducerContext) // Adds player to first unstarted gam
         }
 
         let effects = vec![create_invincible_effect(5.0)];
-        let magician_config = MagicianConfig {player, game_id: game.id, position: DbVector3 { x: 0.0, y: 6.75, z: 0.0 }};
+        let initial_spawn_point = ctx.db.map_respawn_points().name().find("Center".to_string()).expect("Center Spawn Point Must Exist!").position;
+        let magician_config = MagicianConfig {player, game_id: game.id, position: initial_spawn_point };
         let magician = create_magician(magician_config);
 
         let inserted_magician = ctx.db.magician().insert(magician);
@@ -176,7 +185,12 @@ pub fn handle_respawn(ctx: &ReducerContext, timer: RespawnTimersTimer) // Respaw
         let game_option = ctx.db.game().id().find(timer.game_id);
         if game_option.is_some() {
             let effects = vec![create_invincible_effect(5.0)];
-            let magician_config = MagicianConfig {player, game_id: timer.game_id, position: DbVector3 { x: 0.0, y: 0.0, z: 0.0 }};
+
+            let spawn_point_count = ctx.db.map_respawn_points().count();
+            let random_index = ctx.rng().gen_range(0..spawn_point_count);
+            let spawn_point = ctx.db.map_respawn_points().id().find(random_index).expect("Spawn Point Not Found!").position;
+
+            let magician_config = MagicianConfig {player, game_id: timer.game_id, position: spawn_point};
             let magician = create_magician(magician_config);
 
             let inserted_magician = ctx.db.magician().insert(magician);

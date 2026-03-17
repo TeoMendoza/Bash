@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: e7a0aea63129f4c129898def0bc6edf5
+guid: bcd660b5416da4ed3bb65033ebca68bf
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
@@ -31,13 +31,13 @@ ModelImporter:
     extraUserProperties: []
     clipAnimations:
     - serializedVersion: 16
-      name: Crouched Walking - Magician
+      name: Crouch Walk Forward - Magician
       takeName: mixamo.com
       internalID: -203655887218126122
       firstFrame: 0
-      lastFrame: 58
+      lastFrame: 37
       wrapMode: 0
-      orientationOffsetY: 0
+      orientationOffsetY: -40
       level: 0
       cycleOffset: 0
       loop: 0

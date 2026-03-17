@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: af5cdbdf64da445d380704772a7fbdf2
+guid: 5c4f3acbfa8be44d3929fbc9e8d62238
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
@@ -31,13 +31,13 @@ ModelImporter:
     extraUserProperties: []
     clipAnimations:
     - serializedVersion: 16
-      name: Crouched To Standing - Magician
+      name: Crouch To Standing - Magician
       takeName: mixamo.com
       internalID: -203655887218126122
       firstFrame: 0
-      lastFrame: 45
+      lastFrame: 28
       wrapMode: 0
-      orientationOffsetY: 0
+      orientationOffsetY: -30
       level: 0
       cycleOffset: 0
       loop: 0

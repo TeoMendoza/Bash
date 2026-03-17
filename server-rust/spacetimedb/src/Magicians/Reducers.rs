@@ -1,6 +1,7 @@
 use spacetimedb::{Identity, ReducerContext, log_stopwatch::{self, LogStopwatch}, reducer};
 use crate::*;
 
+
 #[reducer]
 pub fn handle_movement_request_magician(ctx: &ReducerContext, request: MovementRequest) { // Handles player request for movement and looking
     let magician_option = ctx.db.magician().identity().find(ctx.sender());
@@ -11,9 +12,12 @@ pub fn handle_movement_request_magician(ctx: &ReducerContext, request: MovementR
     magician.requested_velocity = DbVector3 { x: 0.0, y: magician.requested_velocity.y, z: 0.0 }; // Y velocity processed in gravity reducer
     magician.kinematic_information.jump = false;
 
-    let speed_mutiplier = magician.combat_information.speed_multiplier;
+    let speed_multiplier = magician.combat_information.speed_multiplier;
     let stunned = is_permission_unblocked(&magician.permissions, "Stunned") == false;
     let taroted = is_permission_unblocked(&magician.permissions, "Taroted") == false;
+    let crouched = is_permission_unblocked(&magician.permissions, "CanCrouch") && request.crouch && stunned == false;
+
+    magician.kinematic_information.crouched = crouched;
 
     if is_permission_unblocked(&magician.permissions, "CanWalk") && stunned == false {
         let mut local_x: f32 = 0.0;
@@ -35,12 +39,29 @@ pub fn handle_movement_request_magician(ctx: &ReducerContext, request: MovementR
             local_x = -2.0;
         }
 
-        if is_permission_unblocked(&magician.permissions, "CanRun") && request.sprint && request.move_forward && !request.move_backward { // Stronger forward sprint - No backward sprint currently
-            local_z *= 2.5;
+        if is_permission_unblocked(&magician.permissions, "CanRun") && request.sprint && request.move_forward && !request.move_backward { // Stronger forward sprint - Crouch sprint allowed, but weaker than normal sprint
+            if crouched {
+                local_z *= 1.5;
+            }
+
+            else {
+                local_z *= 2.5;
+            }
         }
 
-        if is_permission_unblocked(&magician.permissions, "CanRun") && request.sprint { // Weaker sideways sprint
-            local_x *= 1.5;
+        if is_permission_unblocked(&magician.permissions, "CanRun") && request.sprint { // Weaker sideways sprint - Also reduced while crouching
+            if crouched {
+                local_x *= 1.15;
+            }
+
+            else {
+                local_x *= 1.5;
+            }
+        }
+
+        if crouched { // General crouch speed reduction, even while sprinting
+            local_x *= 0.5;
+            local_z *= 0.5;
         }
 
         let yaw_radians: f32 = to_radians(magician.rotation.yaw);
@@ -50,8 +71,7 @@ pub fn handle_movement_request_magician(ctx: &ReducerContext, request: MovementR
         let world_x: f32 = cos_yaw * local_x + sin_yaw * local_z;
         let world_z: f32 = -sin_yaw * local_x + cos_yaw * local_z;
 
-
-        magician.requested_velocity = DbVector3 { x: world_x * speed_mutiplier, y: magician.requested_velocity.y, z: world_z * speed_mutiplier}; 
+        magician.requested_velocity = DbVector3 { x: world_x * speed_multiplier, y: magician.requested_velocity.y, z: world_z * speed_multiplier }; 
 
         if taroted {
             magician.requested_velocity = DbVector3 { x: magician.requested_velocity.x * -1.0, y: magician.requested_velocity.y, z: magician.requested_velocity.z * -1.0 }
@@ -61,17 +81,6 @@ pub fn handle_movement_request_magician(ctx: &ReducerContext, request: MovementR
     if is_permission_unblocked(&magician.permissions, "CanJump") && request.jump && stunned == false {
         magician.kinematic_information.jump = true;
         magician.requested_velocity.y = 7.5;
-    }
-
-    if is_permission_unblocked(&magician.permissions, "CanCrouch") && request.crouch && stunned == false {
-        magician.requested_velocity = DbVector3 { x: magician.requested_velocity.x * 0.5, y: magician.requested_velocity.y, z: magician.requested_velocity.z * 0.5 };
-        magician.kinematic_information.crouched = true;
-        add_subscriber_to_permission(&mut magician.permissions, "CanRun", "Crouch"); // Can't sprint while crouching
-    }
-
-    if !request.crouch || stunned == true { // Resets crouch if stunned
-        magician.kinematic_information.crouched = false;
-        remove_subscriber_from_permission(&mut magician.permissions, "CanRun", "Crouch"); // Sprint permission block removed
     }
 
     ctx.db.magician().identity().update(magician);

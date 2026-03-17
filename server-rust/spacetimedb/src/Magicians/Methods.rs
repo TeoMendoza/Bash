@@ -171,8 +171,8 @@ pub fn try_force_overlap_for_entry(ctx: &ReducerContext, character: &mut Magicia
     let min_ground_dot: f32 = 0.75;
     let floor_up_dot: f32 = 0.98;
 
-    let max_vertical_gap_ramp: f32 = 0.045;
-    let max_vertical_snap: f32 = 0.01;
+    let max_vertical_gap_ramp: f32 = 0.04;
+    let max_vertical_snap: f32 = 0.02;
 
     let tiny_overlap: f32 = 0.0005;
     let overlap_enable_gap: f32 = 0.01;

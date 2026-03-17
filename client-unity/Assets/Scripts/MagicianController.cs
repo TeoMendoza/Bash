@@ -334,25 +334,6 @@ public class MagicianController : MonoBehaviour
         return CurrentRequest;
     }
 
-    public bool HasMeaningfulChange(MovementRequest PreviousRequest, MovementRequest CurrentRequest)
-    {
-        if (PreviousRequest.MoveForward != CurrentRequest.MoveForward) return true;
-        if (PreviousRequest.MoveBackward != CurrentRequest.MoveBackward) return true;
-        if (PreviousRequest.MoveLeft != CurrentRequest.MoveLeft) return true;
-        if (PreviousRequest.MoveRight != CurrentRequest.MoveRight) return true;
-
-        if (PreviousRequest.Sprint != CurrentRequest.Sprint) return true;
-        if (PreviousRequest.Crouch != CurrentRequest.Crouch) return true;
-
-        float YawDelta = Mathf.Abs(Mathf.DeltaAngle(PreviousRequest.Aim.Yaw, CurrentRequest.Aim.Yaw));
-        float PitchDelta = Mathf.Abs(PreviousRequest.Aim.Pitch - CurrentRequest.Aim.Pitch);
-
-        if (YawDelta >= AimYawThresholdDegrees) return true;
-        if (PitchDelta >= AimPitchThresholdDegrees) return true;
-
-        return false;
-    }
-
     public bool IsPermissionOccupied(Magician Magician, string Key)
     {
         foreach (PermissionEntry Entry in Magician.Permissions)
@@ -535,7 +516,7 @@ public class MagicianController : MonoBehaviour
                 MagicianOutwardHud.SetOutwardDustCloudActive(true);
 
             else if (insertedEffect.EffectType == EffectType.Cloak)
-                return; // Set Invisible Outward Visual
+                MagicianOutwardHud.SetInvisible(); // Add Two Methods - One For Self Invisible View, One For Others Invisible View, Self View Will Be More Easy To See While For Others Very Hard To See, Both Indicating Insiblity But Self Not Making It Impossible To See Where Player Is
             
             else if (insertedEffect.EffectType == EffectType.Invincible)
                 return; // Set Invincible Outward Visual - Remember To Also Set Inside Configure Because Invincible Insert Doesn't Always Get Registered Here
@@ -556,7 +537,7 @@ public class MagicianController : MonoBehaviour
                 MagicianOutwardHud.SetOutwardDustCloudActive(false);
 
             else if (deletedEffect.EffectType == EffectType.Cloak)
-                return; // Unset Invisible Outward Visual
+                MagicianOutwardHud.ResetInvisible();
             
             else if (deletedEffect.EffectType == EffectType.Invincible)
                 return; // Unset Invincible Outward Visual

@@ -16,6 +16,9 @@ public class MagicianOutwardHudController : MonoBehaviour
     [SerializeField] Image OutwardDustCloud;
     [SerializeField] float DustCloudFadeSeconds = 0.1f;
     Coroutine? ActiveOutwardDustCloudCoroutine;
+    [SerializeField] Material InvisibleMaterial;
+    [SerializeField] Material DefaultMaterial;
+    [SerializeField] SkinnedMeshRenderer MagicianSkin;
 
     public void SetOutwardDustCloudActive(bool IsActive)
     {
@@ -53,5 +56,25 @@ public class MagicianOutwardHudController : MonoBehaviour
 
         OutwardDustCloud.color = new Color(CurrentColor.r, CurrentColor.g, CurrentColor.b, TargetAlpha01);
         ActiveOutwardDustCloudCoroutine = null;
+    }
+
+    public void SetInvisible()
+    {
+        Material[] Materials = MagicianSkin.materials;
+        for (int i = 0; i < Materials.Length; i++)
+        {
+            Materials[i] = InvisibleMaterial;
+        }
+        MagicianSkin.materials = Materials;
+    }
+
+    public void ResetInvisible()
+    {
+        Material[] Materials = MagicianSkin.materials;
+        for (int i = 0; i < Materials.Length; i++)
+        {
+            Materials[i] = DefaultMaterial;
+        }
+        MagicianSkin.materials = Materials;
     }
 }

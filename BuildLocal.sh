@@ -5,23 +5,27 @@ DatabaseName="bash"
 LocalServerUrl="http://127.0.0.1:3000"
 
 RunUnitTests="false"
-DeployToSelfHost="false"
+DeployTarget="local"
 
 for Argument in "$@"; do
   case "$Argument" in
     --unit) RunUnitTests="true" ;;
-    --deploy) DeployToSelfHost="true" ;;
+    --self-host) DeployTarget="self-host" ;;
+    --maincloud) DeployTarget="maincloud" ;;
+    --deploy) DeployTarget="self-host" ;;
     *)
       echo "Unknown argument: $Argument"
       echo "Valid arguments:"
       echo "  --unit"
+      echo "  --self-host"
+      echo "  --maincloud"
       echo "  --deploy"
       exit 1
       ;;
   esac
 done
 
-if [ "$DeployToSelfHost" = "true" ]; then
+if [ "$DeployTarget" != "local" ]; then
   RunUnitTests="true"
 fi
 
@@ -94,38 +98,53 @@ PromptYesNo() {
   esac
 }
 
-ConfirmSelfHostDeployOrExit() {
+ConfirmRemoteDeployOrExit() {
+  local TargetServer="$1"
+  local TargetDatabaseName="$2"
+
   PrintBlankLine
-  echo "Self-host deployment confirmation"
-  echo "  Target server: self-host"
-  echo "  Target database: $DatabaseName"
+  echo "============================================================"
+  echo "Remote deployment confirmation"
+  echo "  Target server: $TargetServer"
+  echo "  Target database: $TargetDatabaseName"
   echo "  Action: publish module and DELETE ALL existing data"
+  echo "  Next: your confirmation below will execute the remote publish"
+  echo "============================================================"
   PrintBlankLine
-  if ! PromptYesNo "Proceed with self-host deploy?"; then
+
+  if ! PromptYesNo "Continue with remote publish?"; then
     echo "Aborted."
     exit 1
   fi
+
   PrintBlankLine
 }
 
 PublishDatabaseLocal() {
   local TargetDatabaseName="$1"
   RunQuietInDir "Publishing to LOCAL DB '$TargetDatabaseName'..." "$SpacetimeDbDirectory" \
-    bash -lc "printf 'y\n' | spacetime publish --server 'local' '$TargetDatabaseName' --delete-data"
+    spacetime publish --server local "$TargetDatabaseName" --delete-data -y
   echo "  Published: local/$TargetDatabaseName"
 }
 
 PublishDatabaseSelfHost() {
   local TargetDatabaseName="$1"
   RunQuietInDir "Publishing to SELF-HOST DB '$TargetDatabaseName'..." "$SpacetimeDbDirectory" \
-    bash -lc "printf 'y\n' | spacetime publish --server 'self-host' '$TargetDatabaseName' --delete-data"
+    spacetime publish --server self-host "$TargetDatabaseName" --delete-data -y
   echo "  Published: self-host/$TargetDatabaseName"
+}
+
+PublishDatabaseMaincloud() {
+  local TargetDatabaseName="$1"
+  RunQuietInDir "Publishing to MAINCLOUD DB '$TargetDatabaseName'..." "$SpacetimeDbDirectory" \
+    spacetime publish --server maincloud "$TargetDatabaseName" --delete-data -y
+  echo "  Published: maincloud/$TargetDatabaseName"
 }
 
 DeleteDatabaseLocal() {
   local TargetDatabaseName="$1"
   RunQuietInDir "Deleting DB '$TargetDatabaseName' on 'local'..." "$SpacetimeDbDirectory" \
-    bash -lc "printf 'y\n' | spacetime delete --server 'local' '$TargetDatabaseName'"
+    spacetime delete --server local "$TargetDatabaseName" -y
   echo "  Deleted: local/$TargetDatabaseName"
 }
 
@@ -151,7 +170,7 @@ echo "Configuration"
 echo "  Repo: $RepoRootDirectory"
 echo "  Local server: $LocalServerUrl"
 echo "  Run unit tests: $RunUnitTests"
-echo "  Deploy to self-host: $DeployToSelfHost"
+echo "  Deploy target: $DeployTarget"
 echo "  Real DB name: $DatabaseName"
 if [ "$RunUnitTests" = "true" ]; then
   echo "  Test DB name: $TestDatabaseName"
@@ -165,8 +184,8 @@ PrintBlankLine
 
 echo "Step 2: spacetime generate (C# bindings)"
 mkdir -p "$BindingsOutputDirectory"
-RunQuietInDir "  Running..." "$SpacetimeDbDirectory" \
-  spacetime generate --lang csharp --out-dir "$BindingsOutputDirectory"
+RunQuietInDir "  Running..." "$RepoRootDirectory" \
+  spacetime generate --lang csharp --out-dir "$BindingsOutputDirectory" -p "$SpacetimeDbDirectory" -y
 echo "  Generated bindings -> $BindingsOutputDirectory"
 PrintBlankLine
 
@@ -181,27 +200,37 @@ if [ "$RunUnitTests" = "true" ]; then
   echo "Step 5: delete temporary local test DB '$TestDatabaseName'"
   DeleteDatabaseLocal "$TestDatabaseName"
   PrintBlankLine
+fi
 
-  if [ "$DeployToSelfHost" = "true" ]; then
-    echo "Step 6: start self-host Docker Compose"
-    StartSelfHostDocker
-    PrintBlankLine
-
-    echo "Step 7: confirm self-host deploy"
-    ConfirmSelfHostDeployOrExit
-
-    echo "Step 8: publish to SELF-HOST real DB '$DatabaseName'"
-    PublishDatabaseSelfHost "$DatabaseName"
-    PrintBlankLine
-  else
+if [ "$DeployTarget" = "local" ]; then
+  if [ "$RunUnitTests" = "true" ]; then
     echo "Step 6: publish to LOCAL real DB '$DatabaseName'"
-    PublishDatabaseLocal "$DatabaseName"
-    PrintBlankLine
+  else
+    echo "Step 3: publish to LOCAL real DB '$DatabaseName'"
   fi
-else
-  echo "Step 3: publish to local DB '$DatabaseName'"
   PublishDatabaseLocal "$DatabaseName"
   PrintBlankLine
+elif [ "$DeployTarget" = "self-host" ]; then
+  echo "Step 6: start self-host Docker Compose"
+  StartSelfHostDocker
+  PrintBlankLine
+
+  echo "Step 7: confirm self-host deploy"
+  ConfirmRemoteDeployOrExit "self-host" "$DatabaseName"
+
+  echo "Step 8: publish to SELF-HOST real DB '$DatabaseName'"
+  PublishDatabaseSelfHost "$DatabaseName"
+  PrintBlankLine
+elif [ "$DeployTarget" = "maincloud" ]; then
+  echo "Step 6: confirm maincloud deploy"
+  ConfirmRemoteDeployOrExit "maincloud" "$DatabaseName"
+
+  echo "Step 7: publish to MAINCLOUD real DB '$DatabaseName'"
+  PublishDatabaseMaincloud "$DatabaseName"
+  PrintBlankLine
+else
+  echo "Error: Unsupported deploy target '$DeployTarget'"
+  exit 1
 fi
 
 echo "Done."

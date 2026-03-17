@@ -7,11 +7,8 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
-    const string SERVER_URL = "http://127.0.0.1:3000"; // For Self-Host Playable Version (LAN - Must Reget IP For New Networks): Use "http://10.0.0.68:3001" For Solo Deploy Testing & Use Cloudflare Quicktunnel URL; For Maincloud Milestone Playable Version Release: "https://maincloud.spacetimedb.com"; For Local Playable Version: "http://127.0.0.1:3001";
-    const string MODULE_NAME = "bash";
-
-    public static event Action OnConnected;
-    public static event Action OnSubscriptionApplied;
+    const string server_url = "http://127.0.0.1:3000"; // For Self-Host Playable Version (LAN - Must Reget IP For New Networks): Use "http://10.0.0.68:3001" For Solo Deploy Testing & Use Cloudflare Quicktunnel URL; For Maincloud Milestone Playable Version Release: "https://maincloud.spacetimedb.com"; For Local Playable Version: "http://127.0.0.1:3000";
+    const string database_name = "bash";
 
 	public static GameManager Instance { get; private set; }
     public static Player Player { get; private set; }
@@ -40,8 +37,9 @@ public class GameManager : MonoBehaviour
             .OnConnect(HandleConnect)
             .OnConnectError(HandleConnectError)
             .OnDisconnect(HandleDisconnect)
-            .WithUri(SERVER_URL)
-            .WithDatabaseName(MODULE_NAME);
+            .WithUri(server_url)
+            .WithDatabaseName(database_name)
+            .WithConfirmedReads(false);
 
         // If the user has a SpacetimeDB auth token stored in the Unity PlayerPrefs,
         // we can use it to authenticate the connection.
@@ -61,15 +59,21 @@ public class GameManager : MonoBehaviour
         Debug.Log("Connected.");
         AuthToken.SaveToken(token);
         LocalIdentity = identity;
-        OnConnected?.Invoke();
 
         // Request all tables
         Conn.SubscriptionBuilder()
             .OnApplied(HandleSubscriptionApplied)
-            .SubscribeToAllTables();
+            .AddQuery(q => q.From.LoggedInPlayers())
+            .AddQuery(q => q.From.Game())
+            .AddQuery(q => q.From.Magician())
+            .AddQuery(q => q.From.GameTimers())
+            .AddQuery(q => q.From.RespawnTimers())
+            .AddQuery(q => q.From.PlayerEffects())
+            .AddQuery(q => q.From.Map())
+            .Subscribe();
 
         Conn.Db.LoggedInPlayers.OnInsert += HandlePlayerLoggedIn;
-        //Conn.Db.LoggedOutPlayers.OnInsert += HandlePlayerLoggedOut;
+        Conn.Db.LoggedInPlayers.OnDelete += HandlePlayerLoggedOut;
     }
 
     void HandleConnectError(Exception ex)
@@ -88,8 +92,7 @@ public class GameManager : MonoBehaviour
 
     private void HandleSubscriptionApplied(SubscriptionEventContext ctx)
     {
-        Debug.Log("Subscription applied!");
-        OnSubscriptionApplied?.Invoke();
+        PlayerCount = ctx.Db.LoggedInPlayers.Count;
     }
 
     public static bool IsConnected()

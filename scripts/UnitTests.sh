@@ -161,7 +161,7 @@ DisableUnitTestMode() {
 
 AssertInitWorked() {
   BeginTest "Init inserts expected rows"
-  AssertSqlCountEquals "map" "4" "Init should insert 4 maps"
+  AssertSqlCountEquals "map" "39" "Init should insert 39 maps"
   EndTest
 }
 

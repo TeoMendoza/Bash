@@ -9,7 +9,7 @@ pub struct Map {
 }
 
 
-#[table(accessor = map_respawn_points, public)]
+#[table(accessor = map_respawn_points)]
 pub struct MapRespawnPoint {
     #[primary_key] #[auto_inc] pub id: u64,
     #[unique] pub name: String,

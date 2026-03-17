@@ -650,7 +650,7 @@ Canvas:
   m_GameObject: {fileID: 383885908073656545}
   m_Enabled: 1
   serializedVersion: 3
-  m_RenderMode: 1
+  m_RenderMode: 0
   m_Camera: {fileID: 0}
   m_PlaneDistance: 1
   m_PixelPerfect: 0
@@ -718,6 +718,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   OutwardDustCloud: {fileID: 188414728786335680}
   DustCloudFadeSeconds: 0.1
+  InvisibleMaterial: {fileID: 2100000, guid: 0b7a6246ebf5c4142b0509bab2197fd9, type: 2}
+  DefaultMaterial: {fileID: 2100000, guid: a3580dc03981a44fbb0869f6eff91d71, type: 2}
+  MagicianSkin: {fileID: 434174866859921054}
 --- !u!1 &515057903802198312
 GameObject:
   m_ObjectHideFlags: 0
@@ -5249,7 +5252,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   AimCollisionFilter:
     serializedVersion: 2
-    m_Bits: 1
+    m_Bits: 128
   IgnoreTag: 
   AimDistance: 200
   NoiseCancellation: 1
@@ -5272,7 +5275,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &9140498312776918533
 RectTransform:
   m_ObjectHideFlags: 0
@@ -5280,7 +5283,7 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7201215895727566590}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
@@ -5309,7 +5312,7 @@ Canvas:
   m_GameObject: {fileID: 7201215895727566590}
   m_Enabled: 1
   serializedVersion: 3
-  m_RenderMode: 1
+  m_RenderMode: 0
   m_Camera: {fileID: 0}
   m_PlaneDistance: 1
   m_PixelPerfect: 0
@@ -6847,6 +6850,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -5047368470670671337, guid: db9e2a08881c84d6f8ee9c97f93ac466, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: a3580dc03981a44fbb0869f6eff91d71, type: 2}
     - target: {fileID: 919132149155446097, guid: db9e2a08881c84d6f8ee9c97f93ac466, type: 3}
       propertyPath: m_Name
       value: Abe

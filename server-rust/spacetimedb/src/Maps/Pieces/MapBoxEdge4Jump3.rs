@@ -51,7 +51,7 @@ pub static MAP_BOX_EDGE_4_JUMP_3_CONVEX_HULL0_TRIANGLE_INDICES_LOCAL: &[i32] = &
 ];
 
 pub fn map_box_edge_4_jump_3_collider() -> ComplexCollider {
-    let map_box_edge_4_jump_3_convex_hull_0: ConvexHullCollider = ConvexHullCollider { vertices_local: MAP_BOX_EDGE_4_JUMP_3_CONVEX_HULL0_VERTICES.to_vec(), triangle_indices_local: MAP_BOX_EDGE_4_JUMP_3_CONVEX_HULL0_TRIANGLE_INDICES_LOCAL.to_vec(), margin: 0.0 };
+    let map_box_edge_4_jump_3_convex_hull_0: ConvexHullCollider = ConvexHullCollider { vertices_local: MAP_BOX_EDGE_4_JUMP_3_CONVEX_HULL0_VERTICES.to_vec(), triangle_indices_local: MAP_BOX_EDGE_4_JUMP_3_CONVEX_HULL0_TRIANGLE_INDICES_LOCAL.to_vec(), margin: 0.0, collider_type: ConvexHullColliderType::None };
     let plane_convex_hulls: Vec<ConvexHullCollider> = vec![map_box_edge_4_jump_3_convex_hull_0];
     ComplexCollider { convex_hulls: plane_convex_hulls, center_point: DbVector3 { x: 20.0, y: 0.5, z: -11.5 } }
 }

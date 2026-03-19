@@ -163,7 +163,7 @@ pub static PIPE_CONVEX_HULL0_TRIANGLE_INDICES_LOCAL: &[i32] = &[
 ];
 
 pub fn pipe_collider() -> ComplexCollider {
-    let pipe_convex_hull_0: ConvexHullCollider = ConvexHullCollider { vertices_local: PIPE_CONVEX_HULL0_VERTICES.to_vec(), triangle_indices_local: PIPE_CONVEX_HULL0_TRIANGLE_INDICES_LOCAL.to_vec(), margin: 0.0 };
+    let pipe_convex_hull_0: ConvexHullCollider = ConvexHullCollider { vertices_local: PIPE_CONVEX_HULL0_VERTICES.to_vec(), triangle_indices_local: PIPE_CONVEX_HULL0_TRIANGLE_INDICES_LOCAL.to_vec(), margin: 0.0, collider_type: ConvexHullColliderType::None };
     let plane_convex_hulls: Vec<ConvexHullCollider> = vec![pipe_convex_hull_0];
     ComplexCollider { convex_hulls: plane_convex_hulls, center_point: DbVector3 { x: 0.0, y: 3.25, z: 0.0 } }
 }

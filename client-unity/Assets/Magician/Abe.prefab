@@ -718,8 +718,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   OutwardDustCloud: {fileID: 188414728786335680}
   DustCloudFadeSeconds: 0.1
-  InvisibleMaterial: {fileID: 2100000, guid: 0b7a6246ebf5c4142b0509bab2197fd9, type: 2}
+  LocalInvisibleMaterial: {fileID: 2100000, guid: 0b7a6246ebf5c4142b0509bab2197fd9, type: 2}
+  NonLocalInvisibleMaterial: {fileID: 2100000, guid: fd956ce987b1043a3b4dd22d15301fa2, type: 2}
   DefaultMaterial: {fileID: 2100000, guid: a3580dc03981a44fbb0869f6eff91d71, type: 2}
+  EmptyMaterial: {fileID: 2100000, guid: ea14aaaf4062645ccbd96d1ee8688112, type: 2}
+  InvincibleMaterial: {fileID: 2100000, guid: 93a2d5e784dda4645a7c9b0c58ca9702, type: 2}
   MagicianSkin: {fileID: 434174866859921054}
 --- !u!1 &515057903802198312
 GameObject:
@@ -5275,7 +5278,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &9140498312776918533
 RectTransform:
   m_ObjectHideFlags: 0
@@ -6851,9 +6854,21 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -5047368470670671337, guid: db9e2a08881c84d6f8ee9c97f93ac466, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -5047368470670671337, guid: db9e2a08881c84d6f8ee9c97f93ac466, type: 3}
+      propertyPath: m_Materials.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: -5047368470670671337, guid: db9e2a08881c84d6f8ee9c97f93ac466, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: a3580dc03981a44fbb0869f6eff91d71, type: 2}
+    - target: {fileID: -5047368470670671337, guid: db9e2a08881c84d6f8ee9c97f93ac466, type: 3}
+      propertyPath: 'm_Materials.Array.data[1]'
+      value: 
+      objectReference: {fileID: 2100000, guid: ea14aaaf4062645ccbd96d1ee8688112, type: 2}
     - target: {fileID: 919132149155446097, guid: db9e2a08881c84d6f8ee9c97f93ac466, type: 3}
       propertyPath: m_Name
       value: Abe

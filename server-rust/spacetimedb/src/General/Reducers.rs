@@ -184,13 +184,18 @@ pub fn handle_respawn(ctx: &ReducerContext, timer: RespawnTimersTimer) // Respaw
     if let Some(player) = player_option {
         let game_option = ctx.db.game().id().find(timer.game_id);
         if game_option.is_some() {
+            let spawn_points: Vec<_> = ctx.db.map_respawn_points().iter().collect();
+            if spawn_points.is_empty() {
+                ctx.db.respawn_timers().scheduled_id().delete(timer.scheduled_id);
+                return;
+            }
+
             let effects = vec![create_invincible_effect(5.0)];
 
-            let spawn_point_count = ctx.db.map_respawn_points().count();
-            let random_index = ctx.rng().gen_range(0..spawn_point_count);
-            let spawn_point = ctx.db.map_respawn_points().id().find(random_index).expect("Spawn Point Not Found!").position;
+            let random_index = ctx.rng().gen_range(0..spawn_points.len());
+            let spawn_point = spawn_points[random_index].position;
 
-            let magician_config = MagicianConfig {player, game_id: timer.game_id, position: spawn_point};
+            let magician_config = MagicianConfig { player, game_id: timer.game_id, position: spawn_point };
             let magician = create_magician(magician_config);
 
             let inserted_magician = ctx.db.magician().insert(magician);

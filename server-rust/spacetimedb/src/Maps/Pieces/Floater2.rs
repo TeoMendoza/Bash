@@ -51,7 +51,7 @@ pub static FLOATER_2_CONVEX_HULL0_TRIANGLE_INDICES_LOCAL: &[i32] = &[
 ];
 
 pub fn floater_2_collider() -> ComplexCollider {
-    let floater_2_convex_hull_0: ConvexHullCollider = ConvexHullCollider { vertices_local: FLOATER_2_CONVEX_HULL0_VERTICES.to_vec(), triangle_indices_local: FLOATER_2_CONVEX_HULL0_TRIANGLE_INDICES_LOCAL.to_vec(), margin: 0.0 };
+    let floater_2_convex_hull_0: ConvexHullCollider = ConvexHullCollider { vertices_local: FLOATER_2_CONVEX_HULL0_VERTICES.to_vec(), triangle_indices_local: FLOATER_2_CONVEX_HULL0_TRIANGLE_INDICES_LOCAL.to_vec(), margin: 0.0, collider_type: ConvexHullColliderType::None };
     let plane_convex_hulls: Vec<ConvexHullCollider> = vec![floater_2_convex_hull_0];
     ComplexCollider { convex_hulls: plane_convex_hulls, center_point: DbVector3 { x: -7.0, y: 6.75, z: 0.0 } }
 }

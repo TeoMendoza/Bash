@@ -16,8 +16,11 @@ public class MagicianOutwardHudController : MonoBehaviour
     [SerializeField] Image OutwardDustCloud;
     [SerializeField] float DustCloudFadeSeconds = 0.1f;
     Coroutine? ActiveOutwardDustCloudCoroutine;
-    [SerializeField] Material InvisibleMaterial;
+    [SerializeField] Material LocalInvisibleMaterial;
+    [SerializeField] Material NonLocalInvisibleMaterial;
     [SerializeField] Material DefaultMaterial;
+    [SerializeField] Material EmptyMaterial;
+    [SerializeField] Material InvincibleMaterial;
     [SerializeField] SkinnedMeshRenderer MagicianSkin;
 
     public void SetOutwardDustCloudActive(bool IsActive)
@@ -58,23 +61,31 @@ public class MagicianOutwardHudController : MonoBehaviour
         ActiveOutwardDustCloudCoroutine = null;
     }
 
-    public void SetInvisible()
+    public void SetInvisible(bool Local)
     {
         Material[] Materials = MagicianSkin.materials;
-        for (int i = 0; i < Materials.Length; i++)
-        {
-            Materials[i] = InvisibleMaterial;
-        }
+        Materials[0] = Local ? LocalInvisibleMaterial : NonLocalInvisibleMaterial;
         MagicianSkin.materials = Materials;
     }
 
     public void ResetInvisible()
     {
         Material[] Materials = MagicianSkin.materials;
-        for (int i = 0; i < Materials.Length; i++)
-        {
-            Materials[i] = DefaultMaterial;
-        }
+        Materials[0] = DefaultMaterial;
+        MagicianSkin.materials = Materials;
+    }
+
+    public void SetInvincible()
+    {
+        Material[] Materials = MagicianSkin.materials;
+        Materials[1] = InvincibleMaterial;
+        MagicianSkin.materials = Materials;
+    }
+
+    public void ResetInvincible()
+    {
+        Material[] Materials = MagicianSkin.materials;
+        Materials[1] = EmptyMaterial;
         MagicianSkin.materials = Materials;
     }
 }

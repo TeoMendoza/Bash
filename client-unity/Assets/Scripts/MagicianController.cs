@@ -113,7 +113,7 @@ public class MagicianController : MonoBehaviour
             {
                 if (Effect.EffectType is EffectType.Invincible)
                     MagicianHud.HandleEffectAsTarget(Effect);
-                    // Also Set Outward Invincible Visual
+                    MagicianOutwardHud.SetInvincible();
             }
         }
     }
@@ -516,10 +516,10 @@ public class MagicianController : MonoBehaviour
                 MagicianOutwardHud.SetOutwardDustCloudActive(true);
 
             else if (insertedEffect.EffectType == EffectType.Cloak)
-                MagicianOutwardHud.SetInvisible(); // Add Two Methods - One For Self Invisible View, One For Others Invisible View, Self View Will Be More Easy To See While For Others Very Hard To See, Both Indicating Insiblity But Self Not Making It Impossible To See Where Player Is
+                MagicianOutwardHud.SetInvisible(Local: IsOwner);
             
             else if (insertedEffect.EffectType == EffectType.Invincible)
-                return; // Set Invincible Outward Visual - Remember To Also Set Inside Configure Because Invincible Insert Doesn't Always Get Registered Here
+                MagicianOutwardHud.SetInvincible();
         }
         
     }
@@ -540,7 +540,7 @@ public class MagicianController : MonoBehaviour
                 MagicianOutwardHud.ResetInvisible();
             
             else if (deletedEffect.EffectType == EffectType.Invincible)
-                return; // Unset Invincible Outward Visual
+                MagicianOutwardHud.ResetInvincible();
         }
     }
 

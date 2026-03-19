@@ -51,7 +51,7 @@ pub static PLATFORM_CONVEX_HULL0_TRIANGLE_INDICES_LOCAL: &[i32] = &[
 ];
 
 pub fn platform_collider() -> ComplexCollider {
-    let platform_convex_hull_0: ConvexHullCollider = ConvexHullCollider { vertices_local: PLATFORM_CONVEX_HULL0_VERTICES.to_vec(), triangle_indices_local: PLATFORM_CONVEX_HULL0_TRIANGLE_INDICES_LOCAL.to_vec(), margin: 0.0 };
+    let platform_convex_hull_0: ConvexHullCollider = ConvexHullCollider { vertices_local: PLATFORM_CONVEX_HULL0_VERTICES.to_vec(), triangle_indices_local: PLATFORM_CONVEX_HULL0_TRIANGLE_INDICES_LOCAL.to_vec(), margin: 0.0, collider_type: ConvexHullColliderType::None };
     let plane_convex_hulls: Vec<ConvexHullCollider> = vec![platform_convex_hull_0];
     ComplexCollider { convex_hulls: plane_convex_hulls, center_point: DbVector3 { x: 0.0, y: 2.0, z: 20.0 } }
 }

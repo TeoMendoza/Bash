@@ -11,7 +11,16 @@ pub struct ComplexCollider { // Engine collider system
 pub struct ConvexHullCollider { 
     pub vertices_local: Vec<DbVector3>, 
     pub triangle_indices_local: Vec<i32>, 
-    pub margin: f32 
+    pub margin: f32,
+    pub collider_type: ConvexHullColliderType
+}
+
+#[derive(SpacetimeType, Clone, Debug)]
+pub enum ConvexHullColliderType {
+    None,
+    Head,
+    Body,
+    Leg
 }
 
 #[derive(SpacetimeType, Copy, Clone, Debug)]

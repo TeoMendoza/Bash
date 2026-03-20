@@ -22,13 +22,19 @@ pub fn adjust_grounded(_ctx: &ReducerContext, was_grounded: bool, move_velocity:
 }
 
 pub fn resolve_contacts(magician: &mut Magician, contacts: &Vec<CollisionContact>) { // Handles correcting velocity and position between player and it's contacts (objects it is colliding with)
+    let small_vertical_deadzone: f32 = 0.02;
+
+    if magician.requested_velocity.y.abs() <= small_vertical_deadzone {
+        magician.requested_velocity.y = 0.0;
+    }
+
     let input_velocity = magician.requested_velocity;
     let world_up = DbVector3 { x: 0.0, y: 1.0, z: 0.0 };
     let min_ground_dot: f32 = 0.75;
     let depth_epsilon: f32 = 2e-3;
     let max_depth: f32 = 0.08;
     let correction_factor: f32 = 0.5;
-    let target_penetration: f32 = 0.01;
+    let target_penetration: f32 = 0.0025;
     let max_position_correction: f32 = 0.015;
     let ground_stick_up_threshold: f32 = 0.03;
     let input_up_cancel_threshold: f32 = 0.03;
@@ -126,7 +132,7 @@ pub fn try_build_contact_for_entry(ctx: &ReducerContext, character_local: &Magic
         let center_b_world = get_collider_center_world(&other_magician.collider, position_b, yaw_radians_b);
 
         if epa_solve(&gjk_result, collider_a, position_a, yaw_radians_a, collider_b, position_b, yaw_radians_b, &mut epa_contact) {
-            let contact_normal = compute_contact_normal(epa_contact.normal, center_a_world, center_b_world);
+            let contact_normal = compute_contact_normal(&ctx, epa_contact.normal, center_a_world, center_b_world);
             contacts.push(CollisionContact { normal: contact_normal, penetration_depth: epa_contact.depth, collision_type: CollisionEntryType::Magician });
             return true;
         }
@@ -148,7 +154,7 @@ pub fn try_build_contact_for_entry(ctx: &ReducerContext, character_local: &Magic
         let center_b_world = get_collider_center_world(&map_piece.collider, position_b, yaw_radians_b);
 
         if epa_solve(&gjk_result, collider_a, position_a, yaw_radians_a, collider_b, position_b, yaw_radians_b, &mut epa_contact) {
-            let contact_normal = compute_contact_normal(epa_contact.normal, center_a_world, center_b_world);
+            let contact_normal = compute_contact_normal(&ctx, epa_contact.normal, center_a_world, center_b_world);
             contacts.push(CollisionContact { normal: contact_normal, penetration_depth: epa_contact.depth, collision_type: CollisionEntryType::Map });
             return true;
         }
@@ -171,8 +177,8 @@ pub fn try_force_overlap_for_entry(ctx: &ReducerContext, character: &mut Magicia
     let min_ground_dot: f32 = 0.75;
     let floor_up_dot: f32 = 0.98;
 
-    let max_vertical_gap_ramp: f32 = 0.04;
-    let max_vertical_snap: f32 = 0.02;
+    let max_vertical_gap_ramp: f32 = 0.02; // 0.04
+    let max_vertical_snap: f32 = 0.01; // 0.02
 
     let tiny_overlap: f32 = 0.0005;
     let overlap_enable_gap: f32 = 0.01;
@@ -198,7 +204,7 @@ pub fn try_force_overlap_for_entry(ctx: &ReducerContext, character: &mut Magicia
     let center_a_world = get_collider_center_world(&collider_a, position_a, yaw_a);
     let center_b_world = get_collider_center_world(&collider_b, position_b, yaw_b);
 
-    let contact_normal = compute_contact_normal(distance_result.separation_direction, center_a_world, center_b_world);
+    let contact_normal = compute_contact_normal(&ctx, distance_result.separation_direction, center_a_world, center_b_world);
 
     let up_dot: f32 = dot(contact_normal, world_up);
     if up_dot < min_ground_dot { return false; }

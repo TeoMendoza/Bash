@@ -32,3 +32,9 @@ pub struct RespawnTimersTimer {
     #[unique] pub identity: Identity, // Used to find target in logged in players (confirms existence)
     pub scheduled_at: ScheduleAt,
 }
+
+#[table(accessor = debug_table, public)]
+pub struct ModuleDebug {
+    #[primary_key] #[auto_inc] pub id: u64,
+    pub debug_on: bool
+}

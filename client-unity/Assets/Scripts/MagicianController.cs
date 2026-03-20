@@ -248,6 +248,9 @@ public class MagicianController : MonoBehaviour
 
     void HandleNormalActions()
     {
+        if (Input.GetKey(KeyCode.U))
+            GameManager.Conn.Reducers.DebugMode();
+
         if (Input.GetKey(KeyCode.R))
         {
             GameManager.Conn.Reducers.HandleActionChangeRequestMagician(

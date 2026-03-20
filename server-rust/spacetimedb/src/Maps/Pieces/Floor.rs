@@ -1,10 +1,10 @@
 use crate::*;
 
 pub static FLOOR_CONVEX_HULL0_VERTICES: &[DbVector3] = &[
-    DbVector3 { x: 37.5, y: -1.0, z: 37.5 },
-    DbVector3 { x: -37.5, y: -1.0, z: 37.5 },
-    DbVector3 { x: -37.5, y: -1.0, z: -37.5 },
-    DbVector3 { x: 37.5, y: -1.0, z: -37.5 },
+    DbVector3 { x: 37.5, y: -5.0, z: 37.5 },
+    DbVector3 { x: -37.5, y: -5.0, z: 37.5 },
+    DbVector3 { x: -37.5, y: -5.0, z: -37.5 },
+    DbVector3 { x: 37.5, y: -5.0, z: -37.5 },
     DbVector3 { x: 37.5, y: 0.0, z: 37.5 },
     DbVector3 { x: -37.5, y: 0.0, z: 37.5 },
     DbVector3 { x: -37.5, y: 0.0, z: -37.5 },

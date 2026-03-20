@@ -65,6 +65,8 @@ pub fn init(ctx: &ReducerContext) // Adds map pieces to database with colliders 
     ctx.db.map_respawn_points().insert(MapRespawnPoint { id: 0, name: "Top Left".to_string(), position: DbVector3 { x: -20.0, y: 0.0, z: 20.0 }});
     ctx.db.map_respawn_points().insert(MapRespawnPoint { id: 0, name: "Bottom Left".to_string(), position: DbVector3 { x: -20.0, y: 0.0, z: -20.0 }});
     ctx.db.map_respawn_points().insert(MapRespawnPoint { id: 0, name: "Bottom Right".to_string(), position: DbVector3 { x: 20.0, y: 0.0, z: -20.0 }});
+
+    ctx.db.debug_table().insert(ModuleDebug { id: 0, debug_on: false } );
 }
 
 #[reducer(client_connected)]
@@ -212,4 +214,17 @@ pub fn handle_game_end(ctx: &ReducerContext, timer: GameTimersTimer) // Cleans u
     cleanup_on_game_end(ctx, timer.game_id);
     ctx.db.game_timers().scheduled_id().delete(timer.scheduled_id);
     ctx.db.game().id().delete(timer.game_id);
+}
+
+#[reducer]
+pub fn debug_mode(ctx: &ReducerContext) {
+    let mut debug_row = ctx.db.debug_table().id().find(1).expect("Debug Row Should Exist!");
+
+    log::info!("Before toggle: {}", debug_row.debug_on);
+
+    debug_row.debug_on = !debug_row.debug_on;
+    ctx.db.debug_table().id().update(debug_row);
+
+    let updated_row = ctx.db.debug_table().id().find(1).expect("Debug Row Should Exist After Update!");
+    log::info!("After toggle: {}", updated_row.debug_on);
 }

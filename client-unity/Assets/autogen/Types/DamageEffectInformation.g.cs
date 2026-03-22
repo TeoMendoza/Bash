@@ -15,20 +15,21 @@ namespace SpacetimeDB.Types
     {
         [DataMember(Name = "base_damage")]
         public float BaseDamage;
-        [DataMember(Name = "damage_multiplier")]
-        public float DamageMultiplier;
+        [DataMember(Name = "damage_type")]
+        public DamageType DamageType;
 
         public DamageEffectInformation(
             float BaseDamage,
-            float DamageMultiplier
+            DamageType DamageType
         )
         {
             this.BaseDamage = BaseDamage;
-            this.DamageMultiplier = DamageMultiplier;
+            this.DamageType = DamageType;
         }
 
         public DamageEffectInformation()
         {
+            this.DamageType = null!;
         }
     }
 }

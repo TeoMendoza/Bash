@@ -15,7 +15,7 @@ pub struct ConvexHullCollider {
     pub collider_type: ConvexHullColliderType
 }
 
-#[derive(SpacetimeType, Clone, Debug)]
+#[derive(SpacetimeType, Clone, Debug, Copy)]
 pub enum ConvexHullColliderType {
     None,
     Head,

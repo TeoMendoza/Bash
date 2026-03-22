@@ -11,7 +11,10 @@ pub fn apply_damage_effect_magician(ctx: &ReducerContext, magician: &mut Magicia
     let mut reward_score = 0u64;
     let damage_info = damage_effect.as_ref().expect("Damage Effect Must Have Information!");
     let health = &mut magician.combat_information.health;
-    let damage = damage_info.base_damage * damage_info.damage_multiplier;
+    let damage = damage_info.base_damage * match damage_info.damage_type {
+        DamageType::Leg { multiplier } => multiplier, DamageType::Body { multiplier } => multiplier, DamageType::Head { multiplier } => multiplier
+    };
+
     *health -= damage;
     reward_score += damage as u64;
 

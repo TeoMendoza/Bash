@@ -243,8 +243,9 @@ pub fn try_perform_attack(ctx: &ReducerContext, magician: &mut Magician, attack_
     let bullet_option = magician.bullets.pop();
     if bullet_option.is_none() { return; } // Should be gated inside action request - Safegaurd regardless
 
-    let bullet = bullet_option.unwrap();
-    let effects = bullet.effects;
+    let mut bullet = bullet_option.unwrap();
+    let effects = &mut bullet.effects;
+    let damage_effect = effects.iter_mut().find(|e| e.effect_type == EffectType::Damage).expect("Bullet Must Have Damage Effect!").damage_information.as_mut().unwrap();
 
     let magician_position = magician.position;
     let magician_yaw_radians: f32 = to_radians(magician.rotation.yaw);
@@ -269,7 +270,15 @@ pub fn try_perform_attack(ctx: &ReducerContext, magician: &mut Magician, attack_
 
     let shot_hit = raycast_match(ctx, spawn_point, shot_direction, attack_information.max_distance); // Checks for a hit based on the rebuilt data (single target)
     if shot_hit.hit && shot_hit.hit_type == RaycastHitType::Magician {
-        add_effects_to_table(ctx, effects, shot_hit.hit_entity_id, magician.id, magician.game_id);
+
+        match shot_hit.collider_type {
+            ConvexHullColliderType::Leg => damage_effect.damage_type = DamageType::Leg { multiplier: 0.5 },
+            ConvexHullColliderType::Body => damage_effect.damage_type = DamageType::Body { multiplier: 1.0 },
+            ConvexHullColliderType::Head => damage_effect.damage_type = DamageType::Head { multiplier: 2.0 },
+            _ => panic!("Magician Raycast Hit Must Have A Body Part Collider Type")
+        };
+
+        add_effects_to_table(ctx, effects.to_vec(), shot_hit.hit_entity_id, magician.id, magician.game_id);
     }
 } 
 

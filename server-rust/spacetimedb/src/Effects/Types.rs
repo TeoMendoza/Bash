@@ -27,7 +27,14 @@ pub struct ApplicationInformation {
 #[derive(SpacetimeType, Clone, Copy)]
 pub struct DamageEffectInformation {
     pub base_damage: f32,
-    pub damage_multiplier: f32, // For Headshot, Legshot, Bodyshot
+    pub damage_type: DamageType
+}
+
+#[derive(SpacetimeType, Clone, Copy)] 
+pub enum DamageType {
+    Leg { multiplier: f32 },
+    Body { multiplier: f32 },
+    Head { multiplier: f32 }
 }
 
 #[derive(SpacetimeType, Clone, Copy)]

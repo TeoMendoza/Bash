@@ -242,6 +242,11 @@ public class MagicianHUDController : MonoBehaviour
     public void HandleEffectAsSender(PlayerEffect Effect)
     {
         if (Effect.EffectType == EffectType.Damage) {
+
+            // switch (Effect.EffectInfo.DamageInformation!.DamageType) {
+                
+            // }
+
             CrosshairController.ShowHitMarker();
         }
     }

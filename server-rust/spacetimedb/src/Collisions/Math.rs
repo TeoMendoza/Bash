@@ -74,52 +74,16 @@ pub fn get_collider_center_world(collider: &ComplexCollider, position: DbVector3
     add(position, rotated_center)
 }
 
-pub fn compute_contact_normal(ctx: &ReducerContext, raw_normal: DbVector3, center_a: DbVector3, center_b: DbVector3) -> DbVector3 {
-    let debug_enabled = ctx.db.debug_table().id().find(1).map_or(false, |row| row.debug_on);
-
-    let raw_length_sq = dot(raw_normal, raw_normal);
-    if raw_length_sq < 1e-6 {
-        if debug_enabled {
-            log::info!(
-                "compute_contact_normal PRE raw=({:.4}, {:.4}, {:.4}) raw_up_dot={:.4} center_a=({:.4}, {:.4}, {:.4}) center_b=({:.4}, {:.4}, {:.4})",
-                raw_normal.x, raw_normal.y, raw_normal.z,
-                0.0,
-                center_a.x, center_a.y, center_a.z,
-                center_b.x, center_b.y, center_b.z
-            );
-
-            log::info!(
-                "compute_contact_normal POST final=({:.4}, {:.4}, {:.4}) final_up_dot={:.4} snap=degenerate",
-                0.0, 1.0, 0.0,
-                1.0
-            );
-        }
-
-        return DbVector3 { x: 0.0, y: 1.0, z: 0.0 };
-    }
-
-    let normalized_raw = normalize(raw_normal);
-    let raw_up_dot = normalized_raw.y;
-
-    if debug_enabled {
-        log::info!(
-            "compute_contact_normal PRE raw=({:.4}, {:.4}, {:.4}) raw_up_dot={:.4} center_a=({:.4}, {:.4}, {:.4}) center_b=({:.4}, {:.4}, {:.4})",
-            normalized_raw.x, normalized_raw.y, normalized_raw.z,
-            raw_up_dot,
-            center_a.x, center_a.y, center_a.z,
-            center_b.x, center_b.y, center_b.z
-        );
-    }
-
-    let mut normal = normalized_raw;
+pub fn compute_contact_normal(_ctx: &ReducerContext, raw_normal: DbVector3, center_a: DbVector3, center_b: DbVector3) -> DbVector3 { // Orients collision normal outward towards target (center_a) - Rounds normals to approximate collisions
+    let mut normal = raw_normal;
+    if dot(normal, normal) < 1e-6 { return DbVector3 { x: 0.0, y: 1.0, z: 0.0 }; }
+    normal = normalize(normal);
 
     let center_delta = sub(center_a, center_b);
     let center_delta_sq: f32 = dot(center_delta, center_delta);
 
     if center_delta_sq > 1e-8 {
-        if dot(normal, center_delta) < 0.0 {
-            normal = negate(normal);
-        }
+        if dot(normal, center_delta) < 0.0 { normal = negate(normal); }
     }
 
     let world_up = DbVector3 { x: 0.0, y: 1.0, z: 0.0 };
@@ -129,84 +93,13 @@ pub fn compute_contact_normal(ctx: &ReducerContext, raw_normal: DbVector3, cente
     let ceiling_snap_dot: f32 = -0.98;
     let wall_snap_abs_dot: f32 = 0.05;
 
-    if up_dot >= floor_snap_dot {
-        if debug_enabled {
-            log::info!(
-                "compute_contact_normal POST final=({:.4}, {:.4}, {:.4}) final_up_dot={:.4} snap=floor",
-                world_up.x, world_up.y, world_up.z,
-                1.0
-            );
-        }
+    if up_dot >= floor_snap_dot { return world_up; } // Floor collision
+    if up_dot <= ceiling_snap_dot { return negate(world_up); } // Ceiling collision
 
-        return world_up;
-    }
-
-    if up_dot <= ceiling_snap_dot {
-        let final_normal = negate(world_up);
-
-        if debug_enabled {
-            log::info!(
-                "compute_contact_normal POST final=({:.4}, {:.4}, {:.4}) final_up_dot={:.4} snap=ceiling",
-                final_normal.x, final_normal.y, final_normal.z,
-                -1.0
-            );
-        }
-
-        return final_normal;
-    }
-
-    if up_dot.abs() <= wall_snap_abs_dot {
+    if up_dot.abs() <= wall_snap_abs_dot { // Wall collision
         normal.y = 0.0;
-        let final_normal = normalize(normal);
-
-        if debug_enabled {
-            log::info!(
-                "compute_contact_normal POST final=({:.4}, {:.4}, {:.4}) final_up_dot={:.4} snap=wall",
-                final_normal.x, final_normal.y, final_normal.z,
-                dot(final_normal, world_up)
-            );
-        }
-
-        return final_normal;
-    }
-
-    if debug_enabled {
-        log::info!(
-            "compute_contact_normal POST final=({:.4}, {:.4}, {:.4}) final_up_dot={:.4} snap=none",
-            normal.x, normal.y, normal.z,
-            up_dot
-        );
+        return normalize(normal);
     }
 
     normal
 }
-
-// pub fn compute_contact_normal(raw_normal: DbVector3, center_a: DbVector3, center_b: DbVector3) -> DbVector3 { // Orients collision normal outward towards target (center_a) - Rounds normals to approximate collisions
-//     let mut normal = raw_normal;
-//     if dot(normal, normal) < 1e-6 { return DbVector3 { x: 0.0, y: 1.0, z: 0.0 }; }
-//     normal = normalize(normal);
-
-//     let center_delta = sub(center_a, center_b);
-//     let center_delta_sq: f32 = dot(center_delta, center_delta);
-
-//     if center_delta_sq > 1e-8 {
-//         if dot(normal, center_delta) < 0.0 { normal = negate(normal); }
-//     }
-
-//     let world_up = DbVector3 { x: 0.0, y: 1.0, z: 0.0 };
-//     let up_dot: f32 = dot(normal, world_up);
-
-//     let floor_snap_dot: f32 = 0.98;
-//     let ceiling_snap_dot: f32 = -0.98;
-//     let wall_snap_abs_dot: f32 = 0.05;
-
-//     if up_dot >= floor_snap_dot { return world_up; } // Floor collision
-//     if up_dot <= ceiling_snap_dot { return negate(world_up); } // Ceiling collision
-
-//     if up_dot.abs() <= wall_snap_abs_dot { // Wall collision
-//         normal.y = 0.0;
-//         return normalize(normal);
-//     }
-
-//     normal
-// }

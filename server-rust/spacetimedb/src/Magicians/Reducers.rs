@@ -24,11 +24,11 @@ pub fn handle_movement_request_magician(ctx: &ReducerContext, request: MovementR
         let mut local_z: f32 = 0.0;
 
         if request.move_forward && !request.move_backward { // Opposite direction requests cancel
-            local_z = 2.0;
+            local_z = 2.5;
         } 
         
         else if request.move_backward && !request.move_forward {
-            local_z = -2.0;
+            local_z = -2.5;
         }
 
         if request.move_right && !request.move_left {
@@ -80,7 +80,7 @@ pub fn handle_movement_request_magician(ctx: &ReducerContext, request: MovementR
 
     if is_permission_unblocked(&magician.permissions, "CanJump") && request.jump && stunned == false {
         magician.kinematic_information.jump = true;
-        magician.requested_velocity.y = 7.5;
+        magician.requested_velocity.y = 9.0;
     }
 
     ctx.db.magician().identity().update(magician);
@@ -313,7 +313,6 @@ pub fn remove_collision_entry_magician(ctx: &ReducerContext, entry: CollisionEnt
 
 #[reducer]
 pub fn move_magicians(ctx: &ReducerContext, timer: MoveAllMagiciansTimer) { // Handles moving players - Collision detection and response handled in this reducer
-    //let reducer_timer = log_stopwatch::LogStopwatch::new("Move Magicians Reducer Completed");
     let time: f32 = timer.tick_rate;
     let min_time_step: f32 = 1e-4;
     let max_substeps: i32 = 16; // Splits work into repeated smaller work to reduce phasing
@@ -375,7 +374,37 @@ pub fn move_magicians(ctx: &ReducerContext, timer: MoveAllMagiciansTimer) { // H
         adjust_grounded(ctx, was_grounded, &final_step_velocity, &mut magician); // Adjusts movement permissions based on whether grounded or in air
         ctx.db.magician().identity().update(magician);
     }
-    //reducer_timer.end();
+}
+
+#[reducer]
+pub fn handle_magician_colliders(ctx: &ReducerContext, timer: HandleMagicianCollidersTimer) {
+    for mut magician in ctx.db.magician().game_id().filter(timer.game_id) {
+        let kinematic_info = &magician.kinematic_information;
+        match kinematic_info.grounded {
+            true => {
+                if kinematic_info.crouched {
+                    magician.collider = MagicianIdleCollider(); // Switch to crouch collider
+                    break;
+                }
+
+                magician.collider = MagicianIdleCollider();
+
+            },
+
+            false => {
+
+                if kinematic_info.falling {
+                    magician.collider = MagicianIdleCollider(); // Switch to falling collider
+                    break;
+                }
+
+                magician.collider = MagicianIdleCollider(); // Switch to jumping collider
+            }
+
+        }
+
+        ctx.db.magician().identity().update(magician);
+    }
 }
 
 #[reducer]

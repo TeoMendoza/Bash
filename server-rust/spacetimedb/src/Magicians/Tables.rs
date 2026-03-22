@@ -56,3 +56,11 @@ pub struct HandleMagicianStatelessTimersTimer {
     pub tick_rate: f32,
     #[unique] pub game_id: u32, // One timer per game
 }
+
+#[table(accessor = handle_magician_colliders_timer, scheduled(handle_magician_colliders))]
+pub struct HandleMagicianCollidersTimer {
+    #[primary_key] #[auto_inc] pub scheduled_id: u64,
+    pub scheduled_at: ScheduleAt,
+    pub tick_rate: f32,
+    #[unique] pub game_id: u32, // One timer per game
+}

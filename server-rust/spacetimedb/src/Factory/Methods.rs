@@ -45,7 +45,7 @@ pub fn create_magician(config: MagicianConfig) -> Magician { // Creates new magi
         timers: vec![
             Timer { name: "Attack".to_string(), state: TimerState::Usable, cooldown_time: 0.65, use_finished_time: 0.65, current_time: 0.0 },
             Timer { name: "Reload".to_string(), state: TimerState::Usable, cooldown_time: 2.0, use_finished_time: 2.0, current_time: 0.0 },
-            Timer { name: "Dust".to_string(), state: TimerState::Usable, cooldown_time: 10.0, use_finished_time: 2.4, current_time: 0.0 },
+            Timer { name: "Dust".to_string(), state: TimerState::Usable, cooldown_time: 10.0, use_finished_time: 1.0, current_time: 0.0 },
             Timer { name: "Cloak".to_string(), state: TimerState::Usable, cooldown_time: 20.0, use_finished_time: 1.5, current_time: 0.0 },
             Timer { name: "Hypnosis".to_string(), state: TimerState::Usable, cooldown_time: 20.0, use_finished_time: 2.0, current_time: 0.0 },
 
@@ -131,57 +131,4 @@ pub fn create_invincible_effect(duration: f32) -> Effect { // Creates an invinci
     let invincible = Effect { effect_type: EffectType::Invincible, application_information: application_information, damage_information: None, cloak_information: None, dust_information: None, speed_information: None, hypnosis_information: None, stunned_information: None, tarot_information: None, invincible_information: Some(invincible_information) };
     
     invincible
-}
-
-pub fn create_test_player(ctx: &ReducerContext, game_id: u32) { // Creates new test magician and returns - Inserts on it's own - Magician not controlled by anyone and does not move
-    let test_identity = Identity::default();
-
-    ctx.db.logged_in_players().insert(Player {
-        identity: test_identity,
-        id: 0,
-        name: "Test Magician".to_string()
-    });
-
-    ctx.db.magician().insert(Magician { 
-        identity: test_identity,
-        id: 10000,
-        name: "Test Magician".to_string(),
-        game_id: game_id,
-        position: DbVector3 { x: 0.0, y: 0.0, z: 5.0 },
-        rotation: DbRotation2 { yaw: 180.0, pitch: 0.0 },
-        requested_velocity: DbVector3 { x: 0.0, y: 0.0, z: 0.0 },
-        corrected_velocity: DbVector3 { x: 0.0, y: 0.0, z: 0.0 },
-        kinematic_information: KinematicInformation { jump: false, falling: false, crouched: false, grounded: false, sprinting: false },
-        combat_information: CombatInformation { health: 200.0, max_health: 200.0, speed_multiplier: 1.0, game_score: 0},
-        state: MagicianState::Default,
-        stateless_timers: vec![ StatelessTimer { name: "Tarot".to_string(), state: StatelessTimerState::Useable, cooldown_time: 20.0, application_time: 0.0, current_time: 0.0} ],
-        permissions: vec![
-            PermissionEntry { key: "CanWalk".to_string(), subscribers: Vec::new() },
-            PermissionEntry { key: "CanRun".to_string(), subscribers: Vec::new() },
-            PermissionEntry { key: "CanJump".to_string(), subscribers: Vec::new() },
-            PermissionEntry { key: "CanCrouch".to_string(), subscribers: Vec::new() },
-            PermissionEntry { key: "CanAttack".to_string(), subscribers: Vec::new() },
-            PermissionEntry { key: "CanReload".to_string(), subscribers: Vec::new() },
-            PermissionEntry { key: "CanDust".to_string(), subscribers: Vec::new() },
-            PermissionEntry { key: "CanCloak".to_string(), subscribers: Vec::new() },
-            PermissionEntry { key: "CanHypnosis".to_string(), subscribers: Vec::new() },
-            PermissionEntry { key: "CanTarot".to_string(), subscribers: Vec::new() },
-            PermissionEntry { key: "Stunned".to_string(), subscribers: Vec::new() },
-            PermissionEntry { key: "Dusted".to_string(), subscribers: Vec::new() },
-            PermissionEntry { key: "Taroted".to_string(), subscribers: Vec::new() },
-            PermissionEntry { key: "Cloaked".to_string(), subscribers: Vec::new() },
-            PermissionEntry { key: "Hypnosised".to_string(), subscribers: Vec::new() },
-            PermissionEntry { key: "Invincibled".to_string(), subscribers: Vec::new() },
-        ], 
-        timers: vec![ Timer { name: "Attack".to_string(), state: TimerState::Usable, cooldown_time: 0.5, use_finished_time: 0.5, current_time: 0.0 },
-            Timer { name: "Reload".to_string(), state: TimerState::Usable, cooldown_time: 2.2, use_finished_time: 2.2, current_time: 0.0 },
-            Timer { name: "Dust".to_string(), state: TimerState::Usable, cooldown_time: 10.0, use_finished_time: 2.4, current_time: 0.0 },
-            Timer { name: "Cloak".to_string(), state: TimerState::Usable, cooldown_time: 20.0, use_finished_time: 1.5, current_time: 0.0 },
-            Timer { name: "Hypnosis".to_string(), state: TimerState::Usable, cooldown_time: 20.0, use_finished_time: 2.0, current_time: 0.0 },],
-        bullets: Vec::new(),
-        bullet_capacity: 8,
-        collider: MagicianIdleCollider(),
-        collision_entries: vec![CollisionEntry { entry_type: CollisionEntryType::Map, id: 1 }],
-        is_colliding: false,
-    });
 }

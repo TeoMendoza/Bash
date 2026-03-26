@@ -29,6 +29,7 @@ public sealed class PlayerColliderRustGeneratorWindow : EditorWindow
     float CoplanarEpsilon = 1e-5f;
     float Margin = 0.0f;
 
+    bool NormalizeLowestYToZero = false;
     bool CopyToClipboardAfterGenerate = true;
 
     Vector2 Scroll;
@@ -48,11 +49,19 @@ public sealed class PlayerColliderRustGeneratorWindow : EditorWindow
         DuplicateEpsilon = EditorGUILayout.FloatField("Duplicate Epsilon", DuplicateEpsilon);
         CoplanarEpsilon = EditorGUILayout.FloatField("Coplanar Epsilon", CoplanarEpsilon);
         Margin = EditorGUILayout.FloatField("Margin", Margin);
+        NormalizeLowestYToZero = EditorGUILayout.Toggle("Normalize Lowest Y To 0", NormalizeLowestYToZero);
         CopyToClipboardAfterGenerate = EditorGUILayout.Toggle("Copy To Clipboard", CopyToClipboardAfterGenerate);
 
         EditorGUILayout.Space(8);
 
-        EditorGUILayout.HelpBox("All vertices are automatically shifted so the global lowest y becomes 0. Rust output uses body-part names and a manual CENTER_POINT_HERE placeholder.", MessageType.Info);
+        if (NormalizeLowestYToZero)
+        {
+            EditorGUILayout.HelpBox("All vertices will be shifted so the global lowest y becomes 0.", MessageType.Info);
+        }
+        else
+        {
+            EditorGUILayout.HelpBox("Vertices will keep their original y values.", MessageType.Info);
+        }
 
         EditorGUILayout.Space(8);
 
@@ -137,19 +146,26 @@ public sealed class PlayerColliderRustGeneratorWindow : EditorWindow
         if (UniqueBodyVertices.Count < 4) throw new Exception("Body vertices must contain at least 4 unique points.");
         if (UniqueHeadVertices.Count < 4) throw new Exception("Head vertices must contain at least 4 unique points.");
 
-        float LowestY = FindLowestY(UniqueLegVertices, UniqueBodyVertices, UniqueHeadVertices);
+        List<Vector3> FinalLegVertices = UniqueLegVertices;
+        List<Vector3> FinalBodyVertices = UniqueBodyVertices;
+        List<Vector3> FinalHeadVertices = UniqueHeadVertices;
 
-        List<Vector3> ShiftedLegVertices = ShiftVerticesY(UniqueLegVertices, -LowestY);
-        List<Vector3> ShiftedBodyVertices = ShiftVerticesY(UniqueBodyVertices, -LowestY);
-        List<Vector3> ShiftedHeadVertices = ShiftVerticesY(UniqueHeadVertices, -LowestY);
+        if (NormalizeLowestYToZero)
+        {
+            float LowestY = FindLowestY(UniqueLegVertices, UniqueBodyVertices, UniqueHeadVertices);
 
-        List<int> LegTriangles = QuickHull3D.BuildHullTriangles(ShiftedLegVertices, CoplanarEpsilon);
-        List<int> BodyTriangles = QuickHull3D.BuildHullTriangles(ShiftedBodyVertices, CoplanarEpsilon);
-        List<int> HeadTriangles = QuickHull3D.BuildHullTriangles(ShiftedHeadVertices, CoplanarEpsilon);
+            FinalLegVertices = ShiftVerticesY(UniqueLegVertices, -LowestY);
+            FinalBodyVertices = ShiftVerticesY(UniqueBodyVertices, -LowestY);
+            FinalHeadVertices = ShiftVerticesY(UniqueHeadVertices, -LowestY);
+        }
+
+        List<int> LegTriangles = QuickHull3D.BuildHullTriangles(FinalLegVertices, CoplanarEpsilon);
+        List<int> BodyTriangles = QuickHull3D.BuildHullTriangles(FinalBodyVertices, CoplanarEpsilon);
+        List<int> HeadTriangles = QuickHull3D.BuildHullTriangles(FinalHeadVertices, CoplanarEpsilon);
 
         ConvexHullData LegHull = new ConvexHullData
         {
-            VerticesLocal = ShiftedLegVertices,
+            VerticesLocal = FinalLegVertices,
             TriangleIndicesLocal = LegTriangles,
             BodyPartName = "LEG",
             ColliderTypeName = "Leg"
@@ -157,7 +173,7 @@ public sealed class PlayerColliderRustGeneratorWindow : EditorWindow
 
         ConvexHullData BodyHull = new ConvexHullData
         {
-            VerticesLocal = ShiftedBodyVertices,
+            VerticesLocal = FinalBodyVertices,
             TriangleIndicesLocal = BodyTriangles,
             BodyPartName = "BODY",
             ColliderTypeName = "Body"
@@ -165,7 +181,7 @@ public sealed class PlayerColliderRustGeneratorWindow : EditorWindow
 
         ConvexHullData HeadHull = new ConvexHullData
         {
-            VerticesLocal = ShiftedHeadVertices,
+            VerticesLocal = FinalHeadVertices,
             TriangleIndicesLocal = HeadTriangles,
             BodyPartName = "HEAD",
             ColliderTypeName = "Head"

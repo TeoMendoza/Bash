@@ -383,7 +383,7 @@ pub fn handle_magician_colliders(ctx: &ReducerContext, timer: HandleMagicianColl
         match kinematic_info.grounded {
             true => {
                 if kinematic_info.crouched {
-                    magician.collider = MagicianIdleCollider(); // Switch to crouch collider
+                    magician.collider = MagicianCrouchCollider();
                     break;
                 }
 
@@ -394,11 +394,11 @@ pub fn handle_magician_colliders(ctx: &ReducerContext, timer: HandleMagicianColl
             false => {
 
                 if kinematic_info.falling {
-                    magician.collider = MagicianIdleCollider(); // Switch to falling collider
+                    magician.collider = MagicianFallingCollider();
                     break;
                 }
 
-                magician.collider = MagicianIdleCollider(); // Switch to jumping collider
+                magician.collider = MagicianJumpingCollider();
             }
 
         }

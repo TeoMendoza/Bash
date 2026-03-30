@@ -126,6 +126,15 @@ public class MagicianController : MonoBehaviour
         GameManager.Conn.Db.PlayerEffects.OnInsert += HandleMagicianEffectInsert;
         GameManager.Conn.Db.PlayerEffects.OnUpdate += HandleMagicianEffectUpdate;
         GameManager.Conn.Db.PlayerEffects.OnDelete += HandleMagicianEffectDelete;
+
+        GameManager.Conn.Db.UnavailableRequestEvent.OnInsert += HandleUnavailableRequest;
+    }
+
+    public void HandleUnavailableRequest(EventContext ctx, UnavailableRequestEvent request)
+    {
+        if (IsOwner && request.Player == Identity)
+            Animator.SetTrigger("UnavailableAction");
+          
     }
 
     void UnsubscribeDbHandlers()

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using SpacetimeDB;
 using SpacetimeDB.Types;
+using Unity.Mathematics;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
@@ -70,6 +71,7 @@ public class GameManager : MonoBehaviour
             .AddQuery(q => q.From.RespawnTimers())
             .AddQuery(q => q.From.PlayerEffects())
             .AddQuery(q => q.From.Map())
+            .AddQuery(q => q.From.UnavailableRequestEvent())
             .Subscribe();
 
         Conn.Db.LoggedInPlayers.OnInsert += HandlePlayerLoggedIn;

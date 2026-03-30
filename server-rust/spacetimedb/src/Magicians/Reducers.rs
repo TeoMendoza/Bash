@@ -1,4 +1,4 @@
-use spacetimedb::{Identity, ReducerContext, log_stopwatch::{self, LogStopwatch}, reducer};
+use spacetimedb::{Identity, ReducerContext, Table, log_stopwatch::{self, LogStopwatch}, reducer};
 use crate::*;
 
 
@@ -8,7 +8,6 @@ pub fn handle_movement_request_magician(ctx: &ReducerContext, request: MovementR
     if magician_option.is_none() { return; }
     let mut magician = magician_option.unwrap();
 
-    magician.rotation = request.aim;
     magician.requested_velocity = DbVector3 { x: 0.0, y: magician.requested_velocity.y, z: 0.0 }; // Y velocity processed in gravity reducer
     magician.kinematic_information.jump = false;
 
@@ -18,6 +17,10 @@ pub fn handle_movement_request_magician(ctx: &ReducerContext, request: MovementR
     let crouched = is_permission_unblocked(&magician.permissions, "CanCrouch") && request.crouch && stunned == false;
 
     magician.kinematic_information.crouched = crouched;
+
+    if stunned == false {
+        magician.rotation = request.aim;
+    }
 
     if is_permission_unblocked(&magician.permissions, "CanWalk") && stunned == false {
         let mut local_x: f32 = 0.0;
@@ -132,6 +135,10 @@ pub fn handle_action_change_request_magician(ctx: &ReducerContext, request: Acti
         add_subscriber_to_permission(&mut magician.permissions, "CanAttack", "Hypnosis");
         add_subscriber_to_permission(&mut magician.permissions, "CanReload", "Hypnosis");
         add_subscriber_to_permission(&mut magician.permissions, "CanCloak", "Hypnosis");
+    }
+
+    else if stunned == false && magician.state == MagicianState::Default {
+        ctx.db.unavailable_request_event().insert(UnavailableRequestEvent { player: ctx.sender() });
     }
 
     if old_state != magician.state {

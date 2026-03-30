@@ -64,3 +64,8 @@ pub struct HandleMagicianCollidersTimer {
     pub tick_rate: f32,
     #[unique] pub game_id: u32, // One timer per game
 }
+
+#[table(accessor = unavailable_request_event, public, event)]
+pub struct UnavailableRequestEvent {
+    pub player: Identity,
+}

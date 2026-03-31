@@ -128,13 +128,19 @@ public class MagicianController : MonoBehaviour
         GameManager.Conn.Db.PlayerEffects.OnDelete += HandleMagicianEffectDelete;
 
         GameManager.Conn.Db.UnavailableRequestEvent.OnInsert += HandleUnavailableRequest;
+        GameManager.Conn.Db.UnavailableRequestInterruptEvent.OnInsert += HandleUnavailableInterruptRequest;
     }
 
     public void HandleUnavailableRequest(EventContext ctx, UnavailableRequestEvent request)
     {
-        if (IsOwner && request.Player == Identity)
-            Animator.SetTrigger("UnavailableAction");
-          
+        if (IsOwner && request.Identity == Identity)
+           Animator.SetTrigger("UnavailableAction");
+    }
+
+    public void HandleUnavailableInterruptRequest(EventContext ctx, UnavailableRequestInterruptEvent request)
+    {
+        if (IsOwner && request.Identity == Identity)
+            Animator.SetTrigger("UnavailableActionInterrupt");  
     }
 
     void UnsubscribeDbHandlers()
@@ -148,6 +154,9 @@ public class MagicianController : MonoBehaviour
         GameManager.Conn.Db.PlayerEffects.OnInsert -= HandleMagicianEffectInsert;
         GameManager.Conn.Db.PlayerEffects.OnUpdate -= HandleMagicianEffectUpdate;
         GameManager.Conn.Db.PlayerEffects.OnDelete -= HandleMagicianEffectDelete;
+
+        GameManager.Conn.Db.UnavailableRequestEvent.OnInsert -= HandleUnavailableRequest;
+        GameManager.Conn.Db.UnavailableRequestInterruptEvent.OnInsert -= HandleUnavailableInterruptRequest;
     }
 
     void Update()
@@ -170,7 +179,7 @@ public class MagicianController : MonoBehaviour
     {
         bool Hypnosised = IsPermissionOccupied(Magician, "Hypnosised");
         bool AttackHeld = Input.GetMouseButton(0);
-        bool DustHeld = Input.GetKey(KeyCode.E);
+        bool DustHeld = Input.GetKeyDown(KeyCode.E);
 
         if (!AttackHeld && !DustHeld && Hypnosised is false)
             return;
@@ -257,10 +266,10 @@ public class MagicianController : MonoBehaviour
 
     void HandleNormalActions()
     {
-        if (Input.GetKey(KeyCode.U))
+        if (Input.GetKeyDown(KeyCode.U))
             GameManager.Conn.Reducers.DebugMode();
 
-        if (Input.GetKey(KeyCode.R))
+        if (Input.GetKeyDown(KeyCode.R))
         {
             GameManager.Conn.Reducers.HandleActionChangeRequestMagician(
                 new ActionRequestMagician(
@@ -274,7 +283,7 @@ public class MagicianController : MonoBehaviour
             );
         }
 
-        if (Input.GetKey(KeyCode.F))
+        if (Input.GetKeyDown(KeyCode.F))
         {
             GameManager.Conn.Reducers.HandleActionChangeRequestMagician(
                 new ActionRequestMagician(
@@ -288,7 +297,7 @@ public class MagicianController : MonoBehaviour
             );
         }
 
-        if (Input.GetKey(KeyCode.C))
+        if (Input.GetKeyDown(KeyCode.C))
         {
             GameManager.Conn.Reducers.HandleActionChangeRequestMagician(
                 new ActionRequestMagician(
@@ -302,7 +311,7 @@ public class MagicianController : MonoBehaviour
             );
         }
 
-        if (Input.GetMouseButton(1)) {
+        if (Input.GetMouseButtonDown(1)) {
             GameManager.Conn.Reducers.HandleStatelessActionRequestMagician(new StatelessActionRequestMagician(Action: MagicianStatelessAction.Tarot));
         }
 

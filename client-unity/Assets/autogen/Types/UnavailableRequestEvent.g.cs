@@ -13,12 +13,12 @@ namespace SpacetimeDB.Types
     [DataContract]
     public sealed partial class UnavailableRequestEvent
     {
-        [DataMember(Name = "player")]
-        public SpacetimeDB.Identity Player;
+        [DataMember(Name = "identity")]
+        public SpacetimeDB.Identity Identity;
 
-        public UnavailableRequestEvent(SpacetimeDB.Identity Player)
+        public UnavailableRequestEvent(SpacetimeDB.Identity Identity)
         {
-            this.Player = Player;
+            this.Identity = Identity;
         }
 
         public UnavailableRequestEvent()

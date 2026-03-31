@@ -67,5 +67,11 @@ pub struct HandleMagicianCollidersTimer {
 
 #[table(accessor = unavailable_request_event, public, event)]
 pub struct UnavailableRequestEvent {
-    pub player: Identity,
+    pub identity: Identity,
 }
+
+#[table(accessor = unavailable_request_interrupt_event, public, event)]
+pub struct UnavailableRequestInterruptEvent {
+    pub identity: Identity,
+}
+

@@ -72,6 +72,7 @@ public class GameManager : MonoBehaviour
             .AddQuery(q => q.From.PlayerEffects())
             .AddQuery(q => q.From.Map())
             .AddQuery(q => q.From.UnavailableRequestEvent())
+            .AddQuery(q => q.From.UnavailableRequestInterruptEvent())
             .Subscribe();
 
         Conn.Db.LoggedInPlayers.OnInsert += HandlePlayerLoggedIn;

@@ -36,6 +36,7 @@ namespace SpacetimeDB.Types
             AddTable(PlayerEffects = new(conn));
             AddTable(RespawnTimers = new(conn));
             AddTable(UnavailableRequestEvent = new(conn));
+            AddTable(UnavailableRequestInterruptEvent = new(conn));
         }
     }
 
@@ -541,6 +542,7 @@ namespace SpacetimeDB.Types
             new QueryBuilder().From.PlayerEffects().ToSql(),
             new QueryBuilder().From.RespawnTimers().ToSql(),
             new QueryBuilder().From.UnavailableRequestEvent().ToSql(),
+            new QueryBuilder().From.UnavailableRequestInterruptEvent().ToSql(),
         }
         ;
     }
@@ -556,6 +558,7 @@ namespace SpacetimeDB.Types
         public global::SpacetimeDB.Table<PlayerEffect, PlayerEffectsCols, PlayerEffectsIxCols> PlayerEffects() => new("player_effects", new PlayerEffectsCols("player_effects"), new PlayerEffectsIxCols("player_effects"));
         public global::SpacetimeDB.Table<RespawnTimersTimer, RespawnTimersCols, RespawnTimersIxCols> RespawnTimers() => new("respawn_timers", new RespawnTimersCols("respawn_timers"), new RespawnTimersIxCols("respawn_timers"));
         public global::SpacetimeDB.Table<UnavailableRequestEvent, UnavailableRequestEventCols, UnavailableRequestEventIxCols> UnavailableRequestEvent() => new("unavailable_request_event", new UnavailableRequestEventCols("unavailable_request_event"), new UnavailableRequestEventIxCols("unavailable_request_event"));
+        public global::SpacetimeDB.Table<UnavailableRequestInterruptEvent, UnavailableRequestInterruptEventCols, UnavailableRequestInterruptEventIxCols> UnavailableRequestInterruptEvent() => new("unavailable_request_interrupt_event", new UnavailableRequestInterruptEventCols("unavailable_request_interrupt_event"), new UnavailableRequestInterruptEventIxCols("unavailable_request_interrupt_event"));
     }
 
     public sealed class TypedSubscriptionBuilder

@@ -27,11 +27,11 @@ namespace SpacetimeDB.Types
 
     public sealed class UnavailableRequestEventCols
     {
-        public global::SpacetimeDB.Col<UnavailableRequestEvent, SpacetimeDB.Identity> Player { get; }
+        public global::SpacetimeDB.Col<UnavailableRequestEvent, SpacetimeDB.Identity> Identity { get; }
 
         public UnavailableRequestEventCols(string tableName)
         {
-            Player = new global::SpacetimeDB.Col<UnavailableRequestEvent, SpacetimeDB.Identity>(tableName, "player");
+            Identity = new global::SpacetimeDB.Col<UnavailableRequestEvent, SpacetimeDB.Identity>(tableName, "identity");
         }
     }
 

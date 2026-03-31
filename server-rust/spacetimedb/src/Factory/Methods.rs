@@ -43,15 +43,15 @@ pub fn create_magician(config: MagicianConfig) -> Magician { // Creates new magi
             PermissionEntry { key: "Invincibled".to_string(), subscribers: Vec::new() },
         ],    
         timers: vec![
-            Timer { name: "Attack".to_string(), state: TimerState::Usable, cooldown_time: 0.65, use_finished_time: 0.65, current_time: 0.0 },
-            Timer { name: "Reload".to_string(), state: TimerState::Usable, cooldown_time: 2.0, use_finished_time: 2.0, current_time: 0.0 },
-            Timer { name: "Dust".to_string(), state: TimerState::Usable, cooldown_time: 10.0, use_finished_time: 1.0, current_time: 0.0 },
-            Timer { name: "Cloak".to_string(), state: TimerState::Usable, cooldown_time: 20.0, use_finished_time: 1.5, current_time: 0.0 },
-            Timer { name: "Hypnosis".to_string(), state: TimerState::Usable, cooldown_time: 20.0, use_finished_time: 2.0, current_time: 0.0 },
+            Timer { name: "Attack".to_string(), state: TimerState::Usable, cooldown_time: 0.5, use_finished_time: 0.5, current_time: 0.0 },
+            Timer { name: "Reload".to_string(), state: TimerState::Usable, cooldown_time: 1.65, use_finished_time: 1.65, current_time: 0.0 },
+            Timer { name: "Dust".to_string(), state: TimerState::Usable, cooldown_time: 15.0, use_finished_time: 1.2, current_time: 0.0 },
+            Timer { name: "Cloak".to_string(), state: TimerState::Usable, cooldown_time: 20.0, use_finished_time: 1.25, current_time: 0.0 },
+            Timer { name: "Hypnosis".to_string(), state: TimerState::Usable, cooldown_time: 45.0, use_finished_time: 1.6, current_time: 0.0 },
 
         ],
         stateless_timers: vec![
-            StatelessTimer { name: "Tarot".to_string(), state: StatelessTimerState::Useable, cooldown_time: 20.0, application_time: 0.0, current_time: 0.0},
+            StatelessTimer { name: "Tarot".to_string(), state: StatelessTimerState::Useable, cooldown_time: 25.0, application_time: 0.0, current_time: 0.0},
         ],
         bullets: bullets,
         bullet_capacity: bullet_capacity,

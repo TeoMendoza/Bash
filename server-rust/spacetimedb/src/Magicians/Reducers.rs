@@ -138,10 +138,11 @@ pub fn handle_action_change_request_magician(ctx: &ReducerContext, request: Acti
     }
 
     else if stunned == false && magician.state == MagicianState::Default {
-        ctx.db.unavailable_request_event().insert(UnavailableRequestEvent { player: ctx.sender() });
+        ctx.db.unavailable_request_event().insert(UnavailableRequestEvent { identity: ctx.sender() });
     }
 
     if old_state != magician.state {
+        ctx.db.unavailable_request_interrupt_event().insert(UnavailableRequestInterruptEvent { identity: ctx.sender() });
         adjust_timer_for_interruptable_state(&mut magician, old_state); // Adjusts timer according to type of state
         match old_state {
             MagicianState::Reload => { remove_subscriber_from_permission(&mut magician.permissions, "CanReload", "Reload"); } // Reload always available after interrupt (Case: interruptable)

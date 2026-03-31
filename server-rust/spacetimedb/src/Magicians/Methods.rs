@@ -271,6 +271,9 @@ pub fn try_perform_attack(ctx: &ReducerContext, magician: &mut Magician, attack_
     let shot_hit = raycast_match(ctx, spawn_point, shot_direction, attack_information.max_distance); // Checks for a hit based on the rebuilt data (single target)
     if shot_hit.hit && shot_hit.hit_type == RaycastHitType::Magician {
 
+        damage_effect.target_name = shot_hit.hit_name;
+        damage_effect.sender_name = magician.name.clone();
+
         match shot_hit.collider_type {
             ConvexHullColliderType::Leg => damage_effect.damage_type = DamageType::Leg { multiplier: 0.5 },
             ConvexHullColliderType::Body => damage_effect.damage_type = DamageType::Body { multiplier: 1.0 },

@@ -3,16 +3,17 @@ use spacetimedb::rand::Rng;
 use std::time::Duration;
 use crate::*;
 
-pub fn handle_magician_death(ctx: &ReducerContext, magician: &mut Magician) { // Removes killed magician and adds respawn timer
-    let player_option = ctx.db.logged_in_players().identity().find(magician.identity); // Adds respawn timer if player is still connected - Handles rage disconnect case
+pub fn handle_magician_death(ctx: &ReducerContext, killed_magician: &mut Magician, killed_magician_name: &str, killer_magician_name: &str) { // Removes killed magician and adds respawn timer
+    let player_option = ctx.db.logged_in_players().identity().find(killed_magician.identity); // Adds respawn timer if player is still connected - Handles rage disconnect case
     if let Some(_player) = player_option {
         let respawn_time = ctx.timestamp.checked_add(TimeDuration::from_micros(5_000_000)).expect("Respawn Timestamp Overflow"); // 5 seconds
-        let respawn_timer = RespawnTimersTimer { scheduled_id: 0, scheduled_at: ScheduleAt::Time(respawn_time), game_id: magician.game_id, identity: magician.identity};
+        let respawn_timer = RespawnTimersTimer { scheduled_id: 0, scheduled_at: ScheduleAt::Time(respawn_time), game_id: killed_magician.game_id, identity: killed_magician.identity};
         ctx.db.respawn_timers().insert(respawn_timer);
     }
 
-    cleanup_on_disconnect_or_death(ctx, magician);
-    ctx.db.magician().id().delete(magician.id);
+    ctx.db.kill_logs().insert(KillLog { game_id: killed_magician.game_id, killer_name: killer_magician_name.to_string(), killed_name: killed_magician_name.to_string() });
+    cleanup_on_disconnect_or_death(ctx, killed_magician);
+    ctx.db.magician().id().delete(killed_magician.id);
 }
 
 pub fn cleanup_on_disconnect_or_death(ctx: &ReducerContext, magician: &mut Magician) { // Cleans up disconnected or dead magician related data - Data: collision entries and effects

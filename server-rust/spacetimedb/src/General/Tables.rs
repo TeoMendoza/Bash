@@ -38,3 +38,10 @@ pub struct ModuleDebug {
     #[primary_key] #[auto_inc] pub id: u64,
     pub debug_on: bool
 }
+
+#[table(accessor = kill_logs, public, event)]
+pub struct KillLog {
+    pub game_id: u32,
+    pub killer_name: String,
+    pub killed_name: String
+}

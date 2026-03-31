@@ -5,6 +5,7 @@ using SpacetimeDB;
 using SpacetimeDB.Types;
 using System.Linq;
 using TMPro;
+using System.Collections;
 
 #nullable enable
 public class MatchManager : MonoBehaviour
@@ -22,10 +23,10 @@ public class MatchManager : MonoBehaviour
     bool InGameMenuActive = false;
 
     [SerializeField] Canvas GameInfoCanvas;
-    [SerializeField] TextMeshProUGUI GameTime;
+    [SerializeField] TextMeshProUGUI GameTimer;
     [SerializeField] List<TextMeshProUGUI> ScoreboardSlots;
-
-    
+    [SerializeField] List<TextMeshProUGUI> KillLogSlots;
+    readonly List<KillLogEntry> ActiveKillLogs = new();
 
     [Header("Match State")]
     public Timestamp RespawnAtTimestamp;
@@ -51,6 +52,8 @@ public class MatchManager : MonoBehaviour
     public Dictionary<uint, MapPiece> MapPieces = new();
     [SerializeField] GameObject MapContainer;
 
+
+    public SubscriptionHandle kill_logs_subscription;
     void Awake()
     {
         if (Instance != null && Instance != this)
@@ -112,20 +115,6 @@ public class MatchManager : MonoBehaviour
         Conn.Db.GameTimers.OnInsert += OnInsertGameTimer;
     }
 
-    void UnregisterDbHandlers()
-    {
-        Conn.Db.Magician.OnInsert -= AddNewCharacter;
-        Conn.Db.Magician.OnDelete -= RemoveCharacter;
-
-        Conn.Db.Game.OnUpdate -= UpdateScoreboard;
-        Conn.Db.Game.OnDelete -= EndGame;
-
-        Conn.Db.RespawnTimers.OnInsert -= OnInsertRespawnTimer;
-        Conn.Db.RespawnTimers.OnDelete -= OnDeleteRespawnTimer;
-
-        Conn.Db.GameTimers.OnInsert -= OnInsertGameTimer;
-    }
-
     void HandleMenuToggle()
     {
         if (!Initalized || GameId is null || !Input.GetKeyDown(KeyCode.Escape))
@@ -176,7 +165,7 @@ public class MatchManager : MonoBehaviour
 
         if (RemainingMicroseconds <= 0)
         {
-            GameTime.text = "";
+            GameTimer.text = "00:00";
             return;
         }
 
@@ -185,17 +174,30 @@ public class MatchManager : MonoBehaviour
 
         int RemainingMinutes = RemainingSecondsCeil / 60;
         int RemainingSecondsRemainder = RemainingSecondsCeil % 60;
+
+        string MinutesBuffer = RemainingMinutes < 10 ? "0" : "";
         string SecondsBuffer = RemainingSecondsRemainder < 10 ? "0" : "";
 
-        GameTime.text = $"{RemainingMinutes}:{SecondsBuffer}{RemainingSecondsRemainder}";
+        GameTimer.text = $"Match End - {MinutesBuffer}{RemainingMinutes}:{SecondsBuffer}{RemainingSecondsRemainder}";
     }
 
-    public void InitializeMatch()
+    public void InitializeMatch(uint GameId)
     {
+        kill_logs_subscription = Conn.SubscriptionBuilder()
+            .AddQuery(q => q.From.KillLogs().Where(kl => kl.GameId.Eq(GameId)))
+            .Subscribe();
+        
+        Conn.Db.KillLogs.OnInsert += HandleKillLogInsert;
+
         SpawnExistingMagicians();
         SpawnExistingMapPieces();
         TryInitializeStartedState();
         SetInGameUiActive();
+    }
+
+    public void HandleKillLogInsert(EventContext ctx, KillLog kill_log)
+    {
+        AddKillLog(kill_log.KillerName, kill_log.KilledName);
     }
 
     void SpawnExistingMagicians()
@@ -283,7 +285,7 @@ public class MatchManager : MonoBehaviour
             if (GameTimer.ScheduledAt is ScheduleAt.Time(var Timestamp))
                 GameEndTimestamp = Timestamp;
 
-            GameTime.text = "15:00";
+            this.GameTimer.text = "Match End - 15:00";
         }
 
         GameInfoCanvas.gameObject.SetActive(true);
@@ -301,7 +303,7 @@ public class MatchManager : MonoBehaviour
         if (Character.Identity == GameManager.LocalIdentity && GameId == null)
         {
             GameId = Character.GameId;
-            InitializeMatch();
+            InitializeMatch(Character.GameId);
             return;
         }
 
@@ -359,7 +361,7 @@ public class MatchManager : MonoBehaviour
         if (insertedTimer.ScheduledAt is ScheduleAt.Time(var Timestamp))
             GameEndTimestamp = Timestamp;
 
-        GameTime.text = "15:00";
+        GameTimer.text = "Match End - 15:00";
     }
 
     public void UpdateScoreboard(EventContext context, Game oldGame, Game newGame)
@@ -403,15 +405,15 @@ public class MatchManager : MonoBehaviour
 
     public void CleanupMatchManager()
     {
+        Conn.Db.KillLogs.OnInsert -= HandleKillLogInsert;
+        if (kill_logs_subscription.IsActive)
+            kill_logs_subscription.Unsubscribe();
+        
         DeleteAllMagicians();
         DeleteAllMapPieces();
 
         ResetMatchState();
         SetLobbyUiActive();
-
-        // Keep In Case Later On Bugs Happen Because Of Table Subscriptions - But These Make Rejoining Match Not Work Currently
-        //UnregisterDbHandlers();
-        //Initalized = false;
     }
 
     void DeleteAllMagicians()
@@ -451,10 +453,29 @@ public class MatchManager : MonoBehaviour
         RespawnCanvas.gameObject.SetActive(false);
         InGameMenuCanvas.gameObject.SetActive(false);
 
-        GameTime.text = "";
+        GameTimer.text = "";
         RespawnTime.text = "";
+        ClearKillLogUi();
 
         SetMenuActive(false);
+    }
+
+    void ClearKillLogUi()
+    {
+        for (int Index = 0; Index < ActiveKillLogs.Count; Index++)
+        {
+            if (ActiveKillLogs[Index].ExpirationCoroutine != null)
+            {
+                StopCoroutine(ActiveKillLogs[Index].ExpirationCoroutine);
+            }
+        }
+
+        ActiveKillLogs.Clear();
+
+        for (int Index = 0; Index < KillLogSlots.Count; Index++)
+        {
+            KillLogSlots[Index].text = "";
+        }
     }
 
     void SetLobbyUiActive()
@@ -463,4 +484,104 @@ public class MatchManager : MonoBehaviour
         InLobbyUI.SetActive(true);
         CursorLocker.SetUiOpen(true);
     }
+
+    public void AddKillLog(string KillerName, string KilledName)
+    {
+        string KillLogMessage = $"{KillerName} -> {KilledName}";
+
+        if (ActiveKillLogs.Count >= KillLogSlots.Count)
+        {
+            RemoveOldestKillLog();
+        }
+
+        KillLogEntry NewKillLogEntry = new KillLogEntry
+        {
+            Message = KillLogMessage
+        };
+
+        ActiveKillLogs.Add(NewKillLogEntry);
+        RefreshKillLogUi();
+
+        NewKillLogEntry.ExpirationCoroutine = StartCoroutine(ExpireKillLogAfterDelay(NewKillLogEntry, 5f));
+    }
+
+    IEnumerator ExpireKillLogAfterDelay(KillLogEntry KillLogEntry, float DelaySeconds)
+    {
+        float FadeDurationSeconds = 0.75f;
+        float VisibleDurationSeconds = Mathf.Max(0f, DelaySeconds - FadeDurationSeconds);
+
+        if (VisibleDurationSeconds > 0f)
+        {
+            yield return new WaitForSeconds(VisibleDurationSeconds);
+        }
+
+        int KillLogIndex = ActiveKillLogs.IndexOf(KillLogEntry);
+        if (KillLogIndex == -1 || KillLogIndex >= KillLogSlots.Count)
+            yield break;
+
+        TextMeshProUGUI KillLogText = KillLogSlots[KillLogIndex];
+        Color OriginalColor = KillLogText.color;
+
+        float ElapsedSeconds = 0f;
+        while (ElapsedSeconds < FadeDurationSeconds)
+        {
+            KillLogIndex = ActiveKillLogs.IndexOf(KillLogEntry);
+            if (KillLogIndex == -1 || KillLogIndex >= KillLogSlots.Count)
+                yield break;
+
+            KillLogText = KillLogSlots[KillLogIndex];
+
+            float Alpha = Mathf.Lerp(1f, 0f, ElapsedSeconds / FadeDurationSeconds);
+            KillLogText.color = new Color(OriginalColor.r, OriginalColor.g, OriginalColor.b, Alpha);
+
+            ElapsedSeconds += Time.deltaTime;
+            yield return null;
+        }
+
+        KillLogIndex = ActiveKillLogs.IndexOf(KillLogEntry);
+        if (KillLogIndex != -1 && KillLogIndex < KillLogSlots.Count)
+        {
+            KillLogText = KillLogSlots[KillLogIndex];
+            KillLogText.color = new Color(OriginalColor.r, OriginalColor.g, OriginalColor.b, 1f);
+        }
+
+        if (ActiveKillLogs.Remove(KillLogEntry))
+        {
+            RefreshKillLogUi();
+        }
+    }
+
+    void RemoveOldestKillLog()
+    {
+        if (ActiveKillLogs.Count == 0)
+            return;
+
+        KillLogEntry OldestKillLogEntry = ActiveKillLogs[0];
+
+        if (OldestKillLogEntry.ExpirationCoroutine != null)
+        {
+            StopCoroutine(OldestKillLogEntry.ExpirationCoroutine);
+        }
+
+        ActiveKillLogs.RemoveAt(0);
+        RefreshKillLogUi();
+    }
+
+    void RefreshKillLogUi()
+    {
+        for (int Index = 0; Index < KillLogSlots.Count; Index++)
+        {
+            Color SlotColor = KillLogSlots[Index].color;
+            KillLogSlots[Index].color = new Color(SlotColor.r, SlotColor.g, SlotColor.b, 1f);
+
+            if (Index < ActiveKillLogs.Count) KillLogSlots[Index].text = ActiveKillLogs[Index].Message;
+            else KillLogSlots[Index].text = "";
+        }
+    }
+}
+
+class KillLogEntry
+{
+    public string Message = "";
+    public Coroutine? ExpirationCoroutine;
 }

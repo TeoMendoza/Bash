@@ -1,4 +1,4 @@
-use spacetimedb::{ReducerContext};
+use spacetimedb::{ReducerContext, Table};
 use crate::*;
 
 
@@ -6,11 +6,11 @@ use crate::*;
 // Effect Applications
 // -------------------
 
-pub fn apply_damage_effect_magician(ctx: &ReducerContext, magician: &mut Magician, damage_effect: &Option<DamageEffectInformation>) -> u64 { // Applies damage effect
+pub fn apply_damage_effect_magician(ctx: &ReducerContext, target_magician: &mut Magician, damage_effect: &Option<DamageEffectInformation>) -> u64 { // Applies damage effect
     //log::info!("Apply Damage Effect Called");
     let mut reward_score = 0u64;
     let damage_info = damage_effect.as_ref().expect("Damage Effect Must Have Information!");
-    let health = &mut magician.combat_information.health;
+    let health = &mut target_magician.combat_information.health;
     let damage = damage_info.base_damage * match damage_info.damage_type {
         DamageType::Leg { multiplier } => multiplier, DamageType::Body { multiplier } => multiplier, DamageType::Head { multiplier } => multiplier
     };
@@ -18,13 +18,13 @@ pub fn apply_damage_effect_magician(ctx: &ReducerContext, magician: &mut Magicia
     *health -= damage;
     reward_score += damage as u64;
 
-    if *health <= 0.0 { // Kills target magician
-        handle_magician_death(ctx, magician);
+    if *health <= 0.0 { // Kills target magician and adds killog
+        handle_magician_death(ctx, target_magician, &damage_info.target_name, &damage_info.sender_name);
         reward_score += 200;
     }
 
     else { // Target magician can have cloak ability effects interrupted by incoming damage
-        try_interrupt_cloak_and_speed_effects_magician(ctx, magician);
+        try_interrupt_cloak_and_speed_effects_magician(ctx, target_magician);
     }
 
     reward_score

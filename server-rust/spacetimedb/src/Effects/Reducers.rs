@@ -90,7 +90,7 @@ pub fn add_effects_to_table(ctx: &ReducerContext, effects: Vec<Effect>, target_i
     if let Some(magician) = magician_option {
         if is_permission_unblocked(&magician.permissions, "Invincibled") { // If target is invincible, skip effect inserts
             for effect in effects {
-                let effect_to_add = PlayerEffect { id: 0, target_id: target_id, sender_id: sender_id, game_id: game_id, effect_info: effect, effect_type: effect.effect_type};
+                let effect_to_add = PlayerEffect { id: 0, target_id: target_id, sender_id: sender_id, game_id: game_id, effect_info: effect.clone(), effect_type: effect.effect_type.clone()};
                 ctx.db.player_effects().insert(effect_to_add);
             } 
             return true;
@@ -98,7 +98,7 @@ pub fn add_effects_to_table(ctx: &ReducerContext, effects: Vec<Effect>, target_i
 
         else if sender_id == target_id {  // Effects can still be added if invincible, but they must be self applied. N/A to magician kit - safegaurd for future characters
             for effect in effects {
-                let effect_to_add = PlayerEffect { id: 0, target_id: target_id, sender_id: sender_id, game_id: game_id, effect_info: effect, effect_type: effect.effect_type};
+                let effect_to_add = PlayerEffect { id: 0, target_id: target_id, sender_id: sender_id, game_id: game_id, effect_info: effect.clone(), effect_type: effect.effect_type.clone()};
                 ctx.db.player_effects().insert(effect_to_add);
             }
             return true;

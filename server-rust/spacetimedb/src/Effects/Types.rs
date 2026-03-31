@@ -1,6 +1,6 @@
 use spacetimedb::{SpacetimeType};
 
-#[derive(SpacetimeType, Clone, Copy)]
+#[derive(SpacetimeType, Clone)]
 pub struct Effect { // Generic effect type, effect specific information must be set but non related can be none
     pub effect_type: EffectType,
     pub application_information: ApplicationInformation,
@@ -24,10 +24,12 @@ pub struct ApplicationInformation {
     pub applied: Option<bool>
 }
 
-#[derive(SpacetimeType, Clone, Copy)]
+#[derive(SpacetimeType, Clone)]
 pub struct DamageEffectInformation {
     pub base_damage: f32,
-    pub damage_type: DamageType
+    pub damage_type: DamageType,
+    pub sender_name: String,
+    pub target_name: String
 }
 
 #[derive(SpacetimeType, Clone, Copy)] 

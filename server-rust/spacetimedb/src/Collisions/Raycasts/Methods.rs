@@ -1,4 +1,4 @@
-use spacetimedb::{Identity, ReducerContext, Table};
+use spacetimedb::{ReducerContext, Table};
 use crate::*;
 
 pub fn raycast_match(ctx: &ReducerContext, ray_origin: DbVector3, ray_direction: DbVector3, max_distance: f32) -> Raycast { // Returns single closest raycast target within max distance
@@ -8,6 +8,7 @@ pub fn raycast_match(ctx: &ReducerContext, ray_origin: DbVector3, ray_direction:
     let mut best_type: RaycastHitType = RaycastHitType::None;
     let mut best_entity_id: u64 = 0;
     let mut best_collider_type: ConvexHullColliderType = ConvexHullColliderType::None;
+    let mut best_hit_name: String = "".to_string();
 
     let ray_direction_unit: DbVector3 = normalize_small_vector(ray_direction, DbVector3 { x: 0.0, y: 0.0, z: 1.0 });
 
@@ -24,6 +25,7 @@ pub fn raycast_match(ctx: &ReducerContext, ray_origin: DbVector3, ray_direction:
                 best_type = hit.hit_type;
                 best_entity_id = hit.hit_entity_id;
                 best_collider_type = hit.collider_type;
+                best_hit_name = other.name.clone();
             }
         }
 
@@ -36,11 +38,12 @@ pub fn raycast_match(ctx: &ReducerContext, ray_origin: DbVector3, ray_direction:
                 best_type = hit.hit_type;
                 best_entity_id = hit.hit_entity_id;
                 best_collider_type = hit.collider_type;
+                best_hit_name = "".to_string();
             }
         }
     }
 
-    Raycast { hit: has_hit, hit_distance: best_distance, hit_point: best_point, hit_type: best_type, hit_entity_id: best_entity_id, collider_type: best_collider_type }
+    Raycast { hit: has_hit, hit_distance: best_distance, hit_point: best_point, hit_type: best_type, hit_entity_id: best_entity_id, collider_type: best_collider_type, hit_name: best_hit_name }
 }
 
 pub fn raycast_cone_match(ctx: &ReducerContext, ray_origin: DbVector3, ray_forward: DbVector3, max_distance: f32, cone_half_angle_degrees: f32) -> Vec<Raycast> { // Returns all targets with cone of max distance - Target must be facing player (enables flash dodges)
@@ -71,7 +74,8 @@ pub fn raycast_cone_match(ctx: &ReducerContext, ray_origin: DbVector3, ray_forwa
                     hit_point: other_center_world,
                     hit_type: RaycastHitType::Magician,
                     hit_entity_id: other.id,
-                    collider_type: ConvexHullColliderType::None
+                    collider_type: ConvexHullColliderType::None,
+                    hit_name: other.name.clone()
                 });
                 continue;
             }
@@ -112,7 +116,7 @@ pub fn raycast_complex_collider(ray_origin: DbVector3, ray_direction_unit: DbVec
         }
     }
 
-    Raycast { hit: has_hit, hit_distance: best_distance, hit_point: best_point, hit_type: if has_hit { hit_type } else { RaycastHitType::None }, hit_entity_id: hit_entity_id, collider_type: if has_hit { best_collider_type } else { ConvexHullColliderType::None } }
+    Raycast { hit: has_hit, hit_distance: best_distance, hit_point: best_point, hit_type: if has_hit { hit_type } else { RaycastHitType::None }, hit_entity_id: hit_entity_id, collider_type: if has_hit { best_collider_type } else { ConvexHullColliderType::None }, hit_name: "".to_string() }
 }
 
 pub fn raycast_complex_collider_world_space(ray_origin: DbVector3, ray_direction_unit: DbVector3, max_distance: f32, collider: &ComplexCollider, hit_type: RaycastHitType, hit_entity_id: u64) -> Raycast {
@@ -131,7 +135,7 @@ pub fn raycast_complex_collider_world_space(ray_origin: DbVector3, ray_direction
         }
     }
 
-    Raycast { hit: has_hit,hit_distance: best_distance, hit_point: best_point, hit_type: if has_hit { hit_type } else { RaycastHitType::None }, hit_entity_id: hit_entity_id, collider_type: if has_hit { best_collider_type } else { ConvexHullColliderType::None } }
+    Raycast { hit: has_hit,hit_distance: best_distance, hit_point: best_point, hit_type: if has_hit { hit_type } else { RaycastHitType::None }, hit_entity_id: hit_entity_id, collider_type: if has_hit { best_collider_type } else { ConvexHullColliderType::None }, hit_name: "".to_string() }
 }
 
 pub fn raycast_convex_hull_triangles(ray_origin_local: DbVector3, ray_direction_local: DbVector3, max_distance: f32, hull: &ConvexHullCollider, hit_distance_out: &mut f32) -> bool {

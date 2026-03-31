@@ -30,6 +30,7 @@ namespace SpacetimeDB.Types
             AddTable(DebugTable = new(conn));
             AddTable(Game = new(conn));
             AddTable(GameTimers = new(conn));
+            AddTable(KillLogs = new(conn));
             AddTable(LoggedInPlayers = new(conn));
             AddTable(Magician = new(conn));
             AddTable(Map = new(conn));
@@ -536,6 +537,7 @@ namespace SpacetimeDB.Types
             new QueryBuilder().From.DebugTable().ToSql(),
             new QueryBuilder().From.Game().ToSql(),
             new QueryBuilder().From.GameTimers().ToSql(),
+            new QueryBuilder().From.KillLogs().ToSql(),
             new QueryBuilder().From.LoggedInPlayers().ToSql(),
             new QueryBuilder().From.Magician().ToSql(),
             new QueryBuilder().From.Map().ToSql(),
@@ -552,6 +554,7 @@ namespace SpacetimeDB.Types
         public global::SpacetimeDB.Table<ModuleDebug, DebugTableCols, DebugTableIxCols> DebugTable() => new("debug_table", new DebugTableCols("debug_table"), new DebugTableIxCols("debug_table"));
         public global::SpacetimeDB.Table<Game, GameCols, GameIxCols> Game() => new("game", new GameCols("game"), new GameIxCols("game"));
         public global::SpacetimeDB.Table<GameTimersTimer, GameTimersCols, GameTimersIxCols> GameTimers() => new("game_timers", new GameTimersCols("game_timers"), new GameTimersIxCols("game_timers"));
+        public global::SpacetimeDB.Table<KillLog, KillLogsCols, KillLogsIxCols> KillLogs() => new("kill_logs", new KillLogsCols("kill_logs"), new KillLogsIxCols("kill_logs"));
         public global::SpacetimeDB.Table<Player, LoggedInPlayersCols, LoggedInPlayersIxCols> LoggedInPlayers() => new("logged_in_players", new LoggedInPlayersCols("logged_in_players"), new LoggedInPlayersIxCols("logged_in_players"));
         public global::SpacetimeDB.Table<Magician, MagicianCols, MagicianIxCols> Magician() => new("magician", new MagicianCols("magician"), new MagicianIxCols("magician"));
         public global::SpacetimeDB.Table<Map, MapCols, MapIxCols> Map() => new("map", new MapCols("map"), new MapIxCols("map"));

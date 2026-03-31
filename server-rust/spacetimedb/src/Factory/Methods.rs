@@ -64,14 +64,14 @@ pub fn create_magician(config: MagicianConfig) -> Magician { // Creates new magi
 }
 
 pub fn create_throwing_card() -> ThrowingCard { // Creates a throwing card (bullet) with damage effect
-    let damage_effect = create_damage_effect(20.0);
+    let damage_effect = create_damage_effect(20.0, "Sender", "Target");
     let effects: Vec<Effect> = vec![damage_effect];
     ThrowingCard { effects: effects }
 }
 
-pub fn create_damage_effect(base_damage: f32) -> Effect { // Creates a damage effect - Application Type: Single
+pub fn create_damage_effect(base_damage: f32, sender_name: &str, target_name: &str ) -> Effect { // Creates a damage effect - Application Type: Single
     let application_information = ApplicationInformation { application_type: ApplicationType::Single, current_time: None, end_time: None, reapply_time: None, current_reapply_time: None, applied: None};
-    let damage_information = DamageEffectInformation { base_damage: base_damage, damage_type: DamageType::Body { multiplier: 1f32 } };
+    let damage_information = DamageEffectInformation { base_damage: base_damage, damage_type: DamageType::Body { multiplier: 1f32 }, sender_name: sender_name.to_string(), target_name: target_name.to_string()};
     let damage = Effect { effect_type: EffectType::Damage, application_information: application_information, damage_information: Some(damage_information), cloak_information: None, dust_information: None, speed_information: None, hypnosis_information: None, stunned_information: None, tarot_information: None, invincible_information: None};
 
     damage

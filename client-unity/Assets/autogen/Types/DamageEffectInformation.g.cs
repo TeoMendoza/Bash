@@ -17,19 +17,29 @@ namespace SpacetimeDB.Types
         public float BaseDamage;
         [DataMember(Name = "damage_type")]
         public DamageType DamageType;
+        [DataMember(Name = "sender_name")]
+        public string SenderName;
+        [DataMember(Name = "target_name")]
+        public string TargetName;
 
         public DamageEffectInformation(
             float BaseDamage,
-            DamageType DamageType
+            DamageType DamageType,
+            string SenderName,
+            string TargetName
         )
         {
             this.BaseDamage = BaseDamage;
             this.DamageType = DamageType;
+            this.SenderName = SenderName;
+            this.TargetName = TargetName;
         }
 
         public DamageEffectInformation()
         {
             this.DamageType = null!;
+            this.SenderName = "";
+            this.TargetName = "";
         }
     }
 }

@@ -243,9 +243,15 @@ public class MagicianHUDController : MonoBehaviour
     {
         if (Effect.EffectType == EffectType.Damage) {
 
-            // switch (Effect.EffectInfo.DamageInformation!.DamageType) {
+            switch (Effect.EffectInfo.DamageInformation!.DamageType) {
+                case DamageType.Head:
+                    MatchManager.Instance.AudioManager.PlayHeadshotSound(true); // Only Owner Has Magician HUD Active To Begin With
+                    break;
                 
-            // }
+                default: 
+                    //MatchManager.Instance.AudioManager.PlayBodyshotSound(true);
+                    break;
+            }
 
             CrosshairController.ShowHitMarker();
         }

@@ -22,6 +22,7 @@ public class MatchManager : MonoBehaviour
     [SerializeField] Canvas InGameMenuCanvas;
     bool InGameMenuActive = false;
 
+    [SerializeField] public AudioManager AudioManager;
     [SerializeField] Canvas GameInfoCanvas;
     [SerializeField] TextMeshProUGUI GameTimer;
     [SerializeField] List<TextMeshProUGUI> ScoreboardSlots;
@@ -507,7 +508,7 @@ public class MatchManager : MonoBehaviour
 
     IEnumerator ExpireKillLogAfterDelay(KillLogEntry KillLogEntry, float DelaySeconds)
     {
-        float FadeDurationSeconds = 0.75f;
+        float FadeDurationSeconds = 1.125f;
         float VisibleDurationSeconds = Mathf.Max(0f, DelaySeconds - FadeDurationSeconds);
 
         if (VisibleDurationSeconds > 0f)

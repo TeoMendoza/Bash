@@ -60,7 +60,7 @@ pub fn init(ctx: &ReducerContext) // Adds map pieces to database with colliders 
     ctx.db.map().insert(Map {id: 0, name: "Right Ramp 2".to_string(), collider: right_ramp_2_collider() });
 
 
-    ctx.db.map_respawn_points().insert(MapRespawnPoint { id: 0, name: "Center".to_string(), position: DbVector3 { x: 0.0, y: 6.75, z: 0.0 }});
+    ctx.db.map_respawn_points().insert(MapRespawnPoint { id: 0, name: "Center".to_string(), position: DbVector3 { x: 0.0, y: 7.0, z: 0.0 }});
     ctx.db.map_respawn_points().insert(MapRespawnPoint { id: 0, name: "Top Right".to_string(), position: DbVector3 { x: 20.0, y: 0.0, z: 20.0 }});
     ctx.db.map_respawn_points().insert(MapRespawnPoint { id: 0, name: "Top Left".to_string(), position: DbVector3 { x: -20.0, y: 0.0, z: 20.0 }});
     ctx.db.map_respawn_points().insert(MapRespawnPoint { id: 0, name: "Bottom Left".to_string(), position: DbVector3 { x: -20.0, y: 0.0, z: -20.0 }});

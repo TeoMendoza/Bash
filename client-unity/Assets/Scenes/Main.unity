@@ -3812,7 +3812,31 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Source: {fileID: 1889550885}
-  Headshot: {fileID: 8300000, guid: ca2499a3dc0544dc59c877fa4d4d13b9, type: 3}
+  SoundsList:
+  - Name: Headshot
+    Clip: {fileID: 8300000, guid: ca2499a3dc0544dc59c877fa4d4d13b9, type: 3}
+  - Name: Bodyshot
+    Clip: {fileID: 8300000, guid: 32cbe16773bf54c75bd9e8cd11da181f, type: 3}
+  - Name: Attack One
+    Clip: {fileID: 8300000, guid: 0f0639894d3784b1abfab58aff136703, type: 3}
+  - Name: Attack Two
+    Clip: {fileID: 8300000, guid: 3ba939d69b89b4d018cdaf8dd22a3f56, type: 3}
+  - Name: Tarot
+    Clip: {fileID: 8300000, guid: d006898dea4ae4d668d0f1eed6ffc1bd, type: 3}
+  - Name: Dust Cast
+    Clip: {fileID: 8300000, guid: ce13303d09f4a45ce8ae0e0fb2144220, type: 3}
+  - Name: Dust Receive
+    Clip: {fileID: 8300000, guid: ee9660987423c42cd9add1a698353c9e, type: 3}
+  - Name: Hypnosis
+    Clip: {fileID: 8300000, guid: f543dddcf8a8f416d91318d5b3437bbe, type: 3}
+  - Name: Cloak
+    Clip: {fileID: 8300000, guid: db1976a9b0684495b8f2271839b61936, type: 3}
+  - Name: Stunned
+    Clip: {fileID: 8300000, guid: ba804128e6f924f8b9eca2585f2d68da, type: 3}
+  - Name: Take Damage One
+    Clip: {fileID: 8300000, guid: 4e34cc1ee0470469d9d6265606067e4a, type: 3}
+  - Name: Take Damage Two
+    Clip: {fileID: 8300000, guid: 96f7bbb534d0d43928b90a3e67a51b8f, type: 3}
 --- !u!1 &2012557125
 GameObject:
   m_ObjectHideFlags: 0

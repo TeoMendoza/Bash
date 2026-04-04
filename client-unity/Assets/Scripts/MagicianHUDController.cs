@@ -68,15 +68,11 @@ public class MagicianHUDController : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKey(KeyCode.Tab))
-        {
+        if (Input.GetKey(KeyCode.Tab)) 
             MagicianKitWidget.SetActive(true);
-        }
-        
-        else
-        {
-            MagicianKitWidget.SetActive(false);
-        }
+         
+        else 
+            MagicianKitWidget.SetActive(false);  
     }
 
     void OnEnable()
@@ -223,17 +219,24 @@ public class MagicianHUDController : MonoBehaviour
 
     public void HandleEffectAsTarget(PlayerEffect Effect)
     {
-        if (Effect.EffectType == EffectType.Damage) { }
+        if (Effect.EffectType == EffectType.Damage) {
+           MatchManager.Instance.AudioManager.PlayTakeDamageSound(true); 
+        }
 
         else if (Effect.EffectType == EffectType.Dust) {
             AddEffectToHud(Effect);
             SetDustCloudActive(true);
+            MatchManager.Instance.AudioManager.PlayDustReceiveSound(true);
         }
         
         else if (Effect.EffectType == EffectType.Stunned) {
-            // Apply Visual "You Are Stunned!" Kind Of Effect
+            MatchManager.Instance.AudioManager.PlayStunnedSound(true); 
         }
 
+        else if (Effect.EffectType == EffectType.Tarot) {
+            MatchManager.Instance.AudioManager.PlayTarotReceiveSound(true); 
+        }
+        
         else {
             AddEffectToHud(Effect);
         }
@@ -249,7 +252,7 @@ public class MagicianHUDController : MonoBehaviour
                     break;
                 
                 default: 
-                    //MatchManager.Instance.AudioManager.PlayBodyshotSound(true);
+                    MatchManager.Instance.AudioManager.PlayBodyshotSound(true);
                     break;
             }
 

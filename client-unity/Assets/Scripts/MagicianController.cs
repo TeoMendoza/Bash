@@ -425,22 +425,42 @@ public class MagicianController : MonoBehaviour
         {
             if (Jump) Animator.SetTrigger("Jump");
 
-            if (Attack) Animator.SetTrigger("Attack");
+            if (Attack) {
+                Animator.SetTrigger("Attack");
+                MatchManager.Instance.AudioManager.PlayAttackSound(IsOwner);
+            }
+
             if (AttackDone) Animator.SetTrigger("AttackDone");
 
             if (Reload) Animator.SetTrigger("Reload");
             if (ReloadDone) Animator.SetTrigger("ReloadDone");
 
-            if (Dust) Animator.SetTrigger("Dust");
+            if (Dust) {
+                Animator.SetTrigger("Dust");
+                MatchManager.Instance.AudioManager.PlayDustCastSound(IsOwner);
+            }
+
             if (DustDone) Animator.SetTrigger("DustDone");
 
-            if (Cloak) Animator.SetTrigger("Cloak");
+            if (Cloak) {
+                Animator.SetTrigger("Cloak");
+                MatchManager.Instance.AudioManager.PlayCloakSound(IsOwner);
+            }
+
             if (CloakDone) Animator.SetTrigger("CloakDone");
 
-            if (Hypnosis) Animator.SetTrigger("Hypnosis");
+            if (Hypnosis) { 
+                Animator.SetTrigger("Hypnosis");
+                MatchManager.Instance.AudioManager.PlayHypnosisSound(IsOwner);
+            }
+
             if (HypnosisDone) Animator.SetTrigger("HypnosisDone");
 
-            if (Stunned) Animator.SetTrigger("Stunned");
+            if (Stunned) {
+                Animator.SetTrigger("Stunned");
+                MatchManager.Instance.AudioManager.PlayStunnedSound(IsOwner);
+            }
+
             if (StunnedDone) Animator.SetTrigger("StunnedDone");
 
             Animator.SetBool("Crouching", Crouching);
@@ -476,8 +496,10 @@ public class MagicianController : MonoBehaviour
 
     void HandleTarotHud(Magician oldMagician, Magician newMagician)
     {
-        if (oldMagician.StatelessTimers[0].State is StatelessTimerState.Useable && newMagician.StatelessTimers[0].State is StatelessTimerState.InCooldown)
+        if (oldMagician.StatelessTimers[0].State is StatelessTimerState.Useable && newMagician.StatelessTimers[0].State is StatelessTimerState.InCooldown) {
             MagicianHud.StartTarotCooldown();
+            MatchManager.Instance.AudioManager.PlayTarotCastSound(IsOwner); 
+        }
 
         if (newMagician.StatelessTimers[0].State is StatelessTimerState.InCooldown)
             MagicianHud.UpdateTarot((int)Math.Ceiling(newMagician.StatelessTimers[0].CooldownTime - newMagician.StatelessTimers[0].CurrentTime));

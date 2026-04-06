@@ -47,7 +47,7 @@ pub fn create_magician(config: MagicianConfig) -> Magician { // Creates new magi
             Timer { name: "Reload".to_string(), state: TimerState::Usable, cooldown_time: 1.65, use_finished_time: 1.65, current_time: 0.0 },
             Timer { name: "Dust".to_string(), state: TimerState::Usable, cooldown_time: 15.0, use_finished_time: 1.2, current_time: 0.0 },
             Timer { name: "Cloak".to_string(), state: TimerState::Usable, cooldown_time: 20.0, use_finished_time: 1.25, current_time: 0.0 },
-            Timer { name: "Hypnosis".to_string(), state: TimerState::Usable, cooldown_time: 45.0, use_finished_time: 1.6, current_time: 0.0 },
+            Timer { name: "Hypnosis".to_string(), state: TimerState::Usable, cooldown_time: 45.0, use_finished_time: 1.0, current_time: 0.0 },
 
         ],
         stateless_timers: vec![

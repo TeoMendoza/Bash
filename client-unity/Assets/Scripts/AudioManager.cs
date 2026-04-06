@@ -1,10 +1,9 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class AudioManager : MonoBehaviour
 {
-
-    
     [SerializeField] AudioSource Source;
     [SerializeField] List<SoundEntry> SoundsList;
 
@@ -40,14 +39,14 @@ public class AudioManager : MonoBehaviour
             switch (UseAttackOneSound) {
                 case true:
                     if (Sounds.TryGetValue("Attack One", out AudioClip attack) && attack != null)
-                        Source.PlayOneShot(attack);
+                        Source.PlayOneShot(attack, volumeScale: 0.8f);
 
                     UseAttackOneSound = !UseAttackOneSound;
                     break;
                 
                 case false:
                     if (Sounds.TryGetValue("Attack Two", out AudioClip attack_2) && attack_2 != null)
-                        Source.PlayOneShot(attack_2); 
+                        Source.PlayOneShot(attack_2, volumeScale: 0.5f); 
 
                     UseAttackOneSound = !UseAttackOneSound;
                     break;
@@ -72,7 +71,7 @@ public class AudioManager : MonoBehaviour
     public void PlayDustCastSound(bool IsOwner) {
         if (IsOwner) {
             if (Sounds.TryGetValue("Dust Cast", out AudioClip clip) && clip != null)
-                Source.PlayOneShot(clip);  
+                Source.PlayOneShot(clip, volumeScale: 0.5f);  
         }
     }
 
@@ -122,6 +121,11 @@ public class AudioManager : MonoBehaviour
                     break;
             } 
         }
+    }
+
+    IEnumerator PlayDelayedOneShot(AudioClip Clip, float DelaySeconds) {
+        yield return new WaitForSeconds(DelaySeconds);
+        Source.PlayOneShot(Clip);
     }
 
 }

@@ -48,7 +48,7 @@ public class MatchManager : MonoBehaviour
     public List<MapPiece> MapPrefabs;
 
     public Dictionary<ulong, MagicianController> MagicianPrefabs = new();
-    MagicianController? LocalMagician = null;
+    public MagicianController? ClientMagician = null;
 
     public Dictionary<uint, MapPiece> MapPieces = new();
     [SerializeField] GameObject MapContainer;
@@ -130,10 +130,10 @@ public class MatchManager : MonoBehaviour
         CursorLocker.SetUiOpen(Active);
         InGameMenuCanvas.gameObject.SetActive(Active);
 
-        if (LocalMagician != null)
+        if (ClientMagician != null)
         {
-            if (Active) LocalMagician.DisableInput();
-            else LocalMagician.EnableInput();
+            if (Active) ClientMagician.DisableInput();
+            else ClientMagician.EnableInput();
         }
     }
 
@@ -224,7 +224,7 @@ public class MatchManager : MonoBehaviour
 
         if (Character.Identity == GameManager.LocalIdentity)
         {
-            LocalMagician = Prefab;
+            ClientMagician = Prefab;
             Prefab.EnableInput();
         }
     }
@@ -324,8 +324,8 @@ public class MatchManager : MonoBehaviour
             MagicianPrefabs.Remove(MagicianId);
         }
 
-        if (Character.Identity == GameManager.LocalIdentity && LocalMagician != null && LocalMagician.Id == MagicianId)
-            LocalMagician = null;
+        if (Character.Identity == GameManager.LocalIdentity && ClientMagician != null && ClientMagician.Id == MagicianId)
+            ClientMagician = null;
     }
 
     public void OnInsertRespawnTimer(EventContext context, RespawnTimersTimer insertedTimer)
@@ -448,7 +448,7 @@ public class MatchManager : MonoBehaviour
         GameId = null;
         Started = false;
         HasRespawnAt = false;
-        LocalMagician = null;
+        ClientMagician = null;
 
         GameInfoCanvas.gameObject.SetActive(false);
         RespawnCanvas.gameObject.SetActive(false);

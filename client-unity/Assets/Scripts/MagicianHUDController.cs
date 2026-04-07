@@ -226,7 +226,7 @@ public class MagicianHUDController : MonoBehaviour
         else if (Effect.EffectType == EffectType.Dust) {
             AddEffectToHud(Effect);
             SetDustCloudActive(true);
-            MatchManager.Instance.AudioManager.PlayDustReceiveSound(true);
+            AudioListener.volume = 0f;
         }
         
         else if (Effect.EffectType == EffectType.Stunned) {
@@ -234,6 +234,7 @@ public class MagicianHUDController : MonoBehaviour
         }
 
         else if (Effect.EffectType == EffectType.Tarot) {
+            AddEffectToHud(Effect);
             MatchManager.Instance.AudioManager.PlayTarotReceiveSound(true); 
         }
         
@@ -267,6 +268,7 @@ public class MagicianHUDController : MonoBehaviour
         else if (Effect.EffectType == EffectType.Dust) {
            RemoveEffectFromHud(Effect);
            SetDustCloudActive(false);
+           AudioListener.volume = 1f;
         }
 
         else if (Effect.EffectType == EffectType.Stunned) {

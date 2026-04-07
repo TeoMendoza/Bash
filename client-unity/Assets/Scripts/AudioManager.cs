@@ -1,12 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
+using SpacetimeDB.Types;
 using UnityEngine;
 
 public class AudioManager : MonoBehaviour
 {
     [SerializeField] AudioSource Source;
     [SerializeField] List<SoundEntry> SoundsList;
-
     Dictionary<string, AudioClip> Sounds;
     private bool UseAttackOneSound = true;
     private bool UseTakeDamageOneSound = true;
@@ -23,14 +23,14 @@ public class AudioManager : MonoBehaviour
     public void PlayHeadshotSound(bool IsOwner) {
         if (IsOwner) {
             if (Sounds.TryGetValue("Headshot", out AudioClip clip) && clip != null)
-                Source.PlayOneShot(clip);  
+                Source.PlayOneShot(clip, volumeScale: 0.5f);  
         }
     }
 
     public void PlayBodyshotSound(bool IsOwner) {
         if (IsOwner) {
             if (Sounds.TryGetValue("Bodyshot", out AudioClip clip) && clip != null)
-                Source.PlayOneShot(clip);  
+                Source.PlayOneShot(clip, volumeScale: 0.5f);  
         }
     }
 
@@ -57,14 +57,14 @@ public class AudioManager : MonoBehaviour
     public void PlayTarotCastSound(bool IsOwner) {
         if (IsOwner) {
             if (Sounds.TryGetValue("Tarot", out AudioClip clip) && clip != null)
-                Source.PlayOneShot(clip);  
+                Source.PlayOneShot(clip, volumeScale: 0.5f);  
         }
     }
 
     public void PlayTarotReceiveSound(bool IsOwner) {
         if (IsOwner) {
             if (Sounds.TryGetValue("Tarot", out AudioClip clip) && clip != null)
-                Source.PlayOneShot(clip);  
+                Source.PlayOneShot(clip, volumeScale: 0.5f);  
         }
     }
 
@@ -75,31 +75,31 @@ public class AudioManager : MonoBehaviour
         }
     }
 
-    public void PlayDustReceiveSound(bool IsOwner) {
-        if (IsOwner) {
-            if (Sounds.TryGetValue("Dust Receive", out AudioClip clip) && clip != null)
-                Source.PlayOneShot(clip);  
-        }
-    }
-
     public void PlayHypnosisSound(bool IsOwner) {
         if (IsOwner) {
             if (Sounds.TryGetValue("Hypnosis", out AudioClip clip) && clip != null)
-                Source.PlayOneShot(clip);  
+                Source.PlayOneShot(clip, 0.5f);  
         }
     }
 
     public void PlayCloakSound(bool IsOwner) {
         if (IsOwner) {
             if (Sounds.TryGetValue("Cloak", out AudioClip clip) && clip != null)
-                Source.PlayOneShot(clip);  
+                Source.PlayOneShot(clip, volumeScale: 0.25f);  
         }
     }
 
     public void PlayStunnedSound(bool IsOwner) {
         if (IsOwner) {
             if (Sounds.TryGetValue("Stunned", out AudioClip clip) && clip != null)
-                Source.PlayOneShot(clip);  
+                Source.PlayOneShot(clip, volumeScale: 0.5f);  
+        }
+    }
+
+    public void PlayUnavailableActionSound(bool IsOwner) {
+        if (IsOwner) {
+            if (Sounds.TryGetValue("Unavailable Action", out AudioClip clip) && clip != null)
+                Source.PlayOneShot(clip, volumeScale: 0.25f);  
         }
     }
 
@@ -108,14 +108,14 @@ public class AudioManager : MonoBehaviour
             switch (UseTakeDamageOneSound) {
                 case true:
                     if (Sounds.TryGetValue("Take Damage One", out AudioClip take_damage) && take_damage != null)
-                        Source.PlayOneShot(take_damage);
+                        Source.PlayOneShot(take_damage, volumeScale: 0.25f);
 
                     UseTakeDamageOneSound = !UseTakeDamageOneSound;
                     break;
                 
                 case false:
                     if (Sounds.TryGetValue("Take Damage Two", out AudioClip take_damage_2) && take_damage_2 != null)
-                        Source.PlayOneShot(take_damage_2); 
+                        Source.PlayOneShot(take_damage_2, volumeScale: 0.25f); 
 
                     UseTakeDamageOneSound = !UseTakeDamageOneSound;
                     break;
@@ -123,9 +123,18 @@ public class AudioManager : MonoBehaviour
         }
     }
 
-    IEnumerator PlayDelayedOneShot(AudioClip Clip, float DelaySeconds) {
-        yield return new WaitForSeconds(DelaySeconds);
-        Source.PlayOneShot(Clip);
+    public void PlayJumpSound(bool IsOwner) {
+        if (IsOwner) {
+            if (Sounds.TryGetValue("Jump", out AudioClip clip) && clip != null)
+                Source.PlayOneShot(clip, volumeScale: 0.5f);  
+        }
+    }
+
+    public void PlayLandSound(bool IsOwner) {
+        if (IsOwner) {
+            if (Sounds.TryGetValue("Land", out AudioClip clip) && clip != null)
+                Source.PlayOneShot(clip, volumeScale: 0.5f);  
+        }
     }
 
 }

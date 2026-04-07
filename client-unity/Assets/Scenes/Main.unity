@@ -209,6 +209,7 @@ MonoBehaviour:
   - {fileID: 608417666563515079, guid: da1decf39cff6495aab571fa39e00ca0, type: 3}
   - {fileID: 7437137628420893806, guid: 6845c850eca7b4b3b895455107280f05, type: 3}
   - {fileID: 9169997490240012242, guid: 3471535f37648420d98e270a796b988f, type: 3}
+  ClientMagician: {fileID: 0}
   MapContainer: {fileID: 2115180072}
 --- !u!4 &156625267
 Transform:
@@ -3825,8 +3826,6 @@ MonoBehaviour:
     Clip: {fileID: 8300000, guid: d006898dea4ae4d668d0f1eed6ffc1bd, type: 3}
   - Name: Dust Cast
     Clip: {fileID: 8300000, guid: 06fc9d00c864a43c9b1bf84a0249cd68, type: 3}
-  - Name: Dust Receive
-    Clip: {fileID: 8300000, guid: ee9660987423c42cd9add1a698353c9e, type: 3}
   - Name: Hypnosis
     Clip: {fileID: 8300000, guid: f543dddcf8a8f416d91318d5b3437bbe, type: 3}
   - Name: Cloak
@@ -3837,6 +3836,8 @@ MonoBehaviour:
     Clip: {fileID: 8300000, guid: 4e34cc1ee0470469d9d6265606067e4a, type: 3}
   - Name: Take Damage Two
     Clip: {fileID: 8300000, guid: 96f7bbb534d0d43928b90a3e67a51b8f, type: 3}
+  - Name: Unavailable Action
+    Clip: {fileID: 8300000, guid: f7da0ca45d7804f9f9339ac26f3404b9, type: 3}
 --- !u!1 &2012557125
 GameObject:
   m_ObjectHideFlags: 0

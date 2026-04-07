@@ -12,6 +12,7 @@ public class MagicianController : MonoBehaviour
     [SerializeField] Canvas Crosshair;
     [SerializeField] MagicianHUDController MagicianHud;
     [SerializeField] MagicianOutwardHudController MagicianOutwardHud;
+    [SerializeField] MagicianWorldAudioManager WorldAudioManager;
 
     [Header("Tuning")]
     public float SendRateHz = 20f;
@@ -26,7 +27,7 @@ public class MagicianController : MonoBehaviour
     readonly float PitchSmooth = 0.08f;
     readonly float SpeedBlendTime = 0.15f;
 
-    Magician Magician;
+    public Magician Magician;
     Camera MainCamera;
 
     bool IsOwner;
@@ -40,7 +41,6 @@ public class MagicianController : MonoBehaviour
     public Vector3 TargetPosition;
     public DbRotation2 TargetRotation = new(0, 0);
     public KinematicInformation KinematicInformation;
-
     public Animator Animator;
 
     float Yaw;
@@ -61,6 +61,8 @@ public class MagicianController : MonoBehaviour
         ConfigureOwnershipAndCameras();
         ConfigureOwnerHud();
         SubscribeDbHandlers();
+
+        WorldAudioManager.Initialize(this);
     }
 
     void BindCharacter(Magician Character)
@@ -133,8 +135,10 @@ public class MagicianController : MonoBehaviour
 
     public void HandleUnavailableRequest(EventContext ctx, UnavailableRequestEvent request)
     {
-        if (IsOwner && request.Identity == Identity)
-           Animator.SetTrigger("UnavailableAction");
+        if (IsOwner && request.Identity == Identity) {
+            Animator.SetTrigger("UnavailableAction");
+            MatchManager.Instance.AudioManager.PlayUnavailableActionSound(IsOwner);
+        }
     }
 
     public void HandleUnavailableInterruptRequest(EventContext ctx, UnavailableRequestInterruptEvent request)
@@ -161,6 +165,8 @@ public class MagicianController : MonoBehaviour
 
     void Update()
     {
+        WorldAudioManager.UpdateKinematicStateSound();
+
         if (!IsOwner || !InputEnabled)
             return;
 
@@ -423,7 +429,10 @@ public class MagicianController : MonoBehaviour
 
         if (Animator != null)
         {
-            if (Jump) Animator.SetTrigger("Jump");
+            if (Jump) { 
+                Animator.SetTrigger("Jump");
+                MatchManager.Instance.AudioManager.PlayJumpSound(IsOwner);
+            }
 
             if (Attack) {
                 Animator.SetTrigger("Attack");
@@ -651,6 +660,7 @@ public class MagicianController : MonoBehaviour
 
     public void Delete()
     {
+        WorldAudioManager?.StopKinematicStateSound();
         UnsubscribeDbHandlers();
         Destroy(gameObject);
     }

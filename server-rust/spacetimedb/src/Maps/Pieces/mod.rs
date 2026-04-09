@@ -37,6 +37,7 @@ pub mod Platform;
 pub mod Platform2;
 pub mod RightRamp2;
 pub mod RightRamp;
+pub mod Walls;
 
 pub use Floater1::*;
 pub use Floater2::*;
@@ -77,3 +78,4 @@ pub use Platform::*;
 pub use Platform2::*;
 pub use RightRamp2::*;
 pub use RightRamp::*;
+pub use Walls::*;

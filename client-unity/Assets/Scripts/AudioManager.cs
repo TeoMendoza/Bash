@@ -133,7 +133,7 @@ public class AudioManager : MonoBehaviour
     public void PlayLandSound(bool IsOwner) {
         if (IsOwner) {
             if (Sounds.TryGetValue("Land", out AudioClip clip) && clip != null)
-                Source.PlayOneShot(clip, volumeScale: 0.5f);  
+                Source.PlayOneShot(clip, volumeScale: 0.05f);  
         }
     }
 

@@ -90,6 +90,7 @@ pub fn test_join_and_start_game_single_player(ctx: &ReducerContext) {
         player,
         game_id,
         position: DbVector3 { x: 0.0, y: 0.0, z: 0.0 },
+        rotation: DbRotation2 { yaw: 0.0, pitch: 0.0 }
     };
 
     let magician = create_magician(magician_config);

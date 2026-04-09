@@ -19,22 +19,27 @@ namespace SpacetimeDB.Types
         public string Name;
         [DataMember(Name = "position")]
         public DbVector3 Position;
+        [DataMember(Name = "rotation")]
+        public DbRotation2 Rotation;
 
         public MapRespawnPoint(
             ulong Id,
             string Name,
-            DbVector3 Position
+            DbVector3 Position,
+            DbRotation2 Rotation
         )
         {
             this.Id = Id;
             this.Name = Name;
             this.Position = Position;
+            this.Rotation = Rotation;
         }
 
         public MapRespawnPoint()
         {
             this.Name = "";
             this.Position = new();
+            this.Rotation = new();
         }
     }
 }

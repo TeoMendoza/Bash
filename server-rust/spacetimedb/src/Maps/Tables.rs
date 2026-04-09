@@ -13,5 +13,6 @@ pub struct Map {
 pub struct MapRespawnPoint {
     #[primary_key] #[auto_inc] pub id: u64,
     #[unique] pub name: String,
-    #[unique] pub position: DbVector3
+    #[unique] pub position: DbVector3,
+    #[unique] pub rotation: DbRotation2
 }

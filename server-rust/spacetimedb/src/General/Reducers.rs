@@ -59,12 +59,16 @@ pub fn init(ctx: &ReducerContext) // Adds map pieces to database with colliders 
     ctx.db.map().insert(Map {id: 0, name: "Right Ramp".to_string(), collider: right_ramp_collider() });
     ctx.db.map().insert(Map {id: 0, name: "Right Ramp 2".to_string(), collider: right_ramp_2_collider() });
 
+    ctx.db.map().insert(Map { id: 0, name: "North Wall".to_string(), collider: north_wall_collider() });
+    ctx.db.map().insert(Map { id: 0, name: "South Wall".to_string(), collider: south_wall_collider() });
+    ctx.db.map().insert(Map { id: 0, name: "East Wall".to_string(), collider: east_wall_collider() });
+    ctx.db.map().insert(Map { id: 0, name: "West Wall".to_string(), collider: west_wall_collider() });
 
-    ctx.db.map_respawn_points().insert(MapRespawnPoint { id: 0, name: "Center".to_string(), position: DbVector3 { x: 0.0, y: 7.0, z: 0.0 }});
-    ctx.db.map_respawn_points().insert(MapRespawnPoint { id: 0, name: "Top Right".to_string(), position: DbVector3 { x: 20.0, y: 0.0, z: 20.0 }});
-    ctx.db.map_respawn_points().insert(MapRespawnPoint { id: 0, name: "Top Left".to_string(), position: DbVector3 { x: -20.0, y: 0.0, z: 20.0 }});
-    ctx.db.map_respawn_points().insert(MapRespawnPoint { id: 0, name: "Bottom Left".to_string(), position: DbVector3 { x: -20.0, y: 0.0, z: -20.0 }});
-    ctx.db.map_respawn_points().insert(MapRespawnPoint { id: 0, name: "Bottom Right".to_string(), position: DbVector3 { x: 20.0, y: 0.0, z: -20.0 }});
+    ctx.db.map_respawn_points().insert(MapRespawnPoint { id: 0, name: "Center".to_string(), position: DbVector3 { x: 0.0, y: 7.0, z: 0.0 }, rotation: DbRotation2 { yaw: 0.0, pitch: 0.0 } });
+    ctx.db.map_respawn_points().insert(MapRespawnPoint { id: 0, name: "Top Right".to_string(), position: DbVector3 { x: 20.0, y: 0.0, z: 20.0 }, rotation: DbRotation2 { yaw: -135.0, pitch: 0.0 } });
+    ctx.db.map_respawn_points().insert(MapRespawnPoint { id: 0, name: "Top Left".to_string(), position: DbVector3 { x: -20.0, y: 0.0, z: 20.0 }, rotation: DbRotation2 { yaw: 135.0, pitch: 0.0 } });
+    ctx.db.map_respawn_points().insert(MapRespawnPoint { id: 0, name: "Bottom Left".to_string(), position: DbVector3 { x: -20.0, y: 0.0, z: -20.0 }, rotation: DbRotation2 { yaw: 45.0, pitch: 0.0 } });
+    ctx.db.map_respawn_points().insert(MapRespawnPoint { id: 0, name: "Bottom Right".to_string(), position: DbVector3 { x: 20.0, y: 0.0, z: -20.0 }, rotation: DbRotation2 { yaw: -45.0, pitch: 0.0 } });
 
     ctx.db.debug_table().insert(ModuleDebug { id: 0, debug_on: false } );
 }
@@ -147,8 +151,8 @@ pub fn try_join_game(ctx: &ReducerContext) // Adds player to first unstarted gam
         }
 
         let effects = vec![create_invincible_effect(5.0)];
-        let initial_spawn_point = ctx.db.map_respawn_points().name().find("Center".to_string()).expect("Center Spawn Point Must Exist!").position;
-        let magician_config = MagicianConfig {player, game_id: game.id, position: initial_spawn_point };
+        let map_respawn_point = ctx.db.map_respawn_points().name().find("Center".to_string()).expect("Center Spawn Point Must Exist!");
+        let magician_config = MagicianConfig {player, game_id: game.id, position: map_respawn_point.position, rotation: map_respawn_point.rotation };
         let magician = create_magician(magician_config);
 
         let inserted_magician = ctx.db.magician().insert(magician);
@@ -195,9 +199,9 @@ pub fn handle_respawn(ctx: &ReducerContext, timer: RespawnTimersTimer) // Respaw
             let effects = vec![create_invincible_effect(5.0)];
 
             let random_index = ctx.rng().gen_range(0..spawn_points.len());
-            let spawn_point = spawn_points[random_index].position;
+            let respawn_point = &spawn_points[random_index];
 
-            let magician_config = MagicianConfig { player, game_id: timer.game_id, position: spawn_point };
+            let magician_config = MagicianConfig { player, game_id: timer.game_id, position: respawn_point.position, rotation: respawn_point.rotation };
             let magician = create_magician(magician_config);
 
             let inserted_magician = ctx.db.magician().insert(magician);

@@ -10,6 +10,7 @@ pub fn handle_movement_request_magician(ctx: &ReducerContext, request: MovementR
 
     magician.requested_velocity = DbVector3 { x: 0.0, y: magician.requested_velocity.y, z: 0.0 }; // Y velocity processed in gravity reducer
     magician.kinematic_information.jump = false;
+    magician.kinematic_information.sprinting = false;
 
     let speed_multiplier = magician.combat_information.speed_multiplier;
     let stunned = is_permission_unblocked(&magician.permissions, "Stunned") == false;
@@ -42,7 +43,18 @@ pub fn handle_movement_request_magician(ctx: &ReducerContext, request: MovementR
             local_x = -2.0;
         }
 
-        if is_permission_unblocked(&magician.permissions, "CanRun") && request.sprint && request.move_forward && !request.move_backward { // Stronger forward sprint - Crouch sprint allowed, but weaker than normal sprint
+        let forward_sprinting =
+            is_permission_unblocked(&magician.permissions, "CanRun")
+            && request.sprint
+            && request.move_forward
+            && !request.move_backward;
+
+        let sideways_sprinting =
+            is_permission_unblocked(&magician.permissions, "CanRun")
+            && request.sprint
+            && (request.move_right != request.move_left);
+
+        if forward_sprinting { // Stronger forward sprint - Crouch sprint allowed, but weaker than normal sprint
             if crouched {
                 local_z *= 1.5;
             }
@@ -52,7 +64,7 @@ pub fn handle_movement_request_magician(ctx: &ReducerContext, request: MovementR
             }
         }
 
-        if is_permission_unblocked(&magician.permissions, "CanRun") && request.sprint { // Weaker sideways sprint - Also reduced while crouching
+        if sideways_sprinting { // Weaker sideways sprint - Also reduced while crouching
             if crouched {
                 local_x *= 1.15;
             }
@@ -66,6 +78,8 @@ pub fn handle_movement_request_magician(ctx: &ReducerContext, request: MovementR
             local_x *= 0.5;
             local_z *= 0.5;
         }
+
+        magician.kinematic_information.sprinting = forward_sprinting;
 
         let yaw_radians: f32 = to_radians(magician.rotation.yaw);
         let cos_yaw: f32 = yaw_radians.cos();

@@ -30,7 +30,7 @@ public class MagicianController : MonoBehaviour
     public Magician Magician;
     Camera MainCamera;
 
-    bool IsOwner;
+    public bool IsOwner;
     public bool InputEnabled = false;
 
     public Identity Identity;
@@ -39,7 +39,7 @@ public class MagicianController : MonoBehaviour
     public uint MatchId;
 
     public Vector3 TargetPosition;
-    public DbRotation2 TargetRotation = new(0, 0);
+    public DbRotation2 TargetRotation = new(0,0);
     public KinematicInformation KinematicInformation;
     public Animator Animator;
 
@@ -77,7 +77,13 @@ public class MagicianController : MonoBehaviour
         transform.position = Character.Position;
         TargetPosition = Character.Position;
 
+        transform.rotation = Quaternion.Euler(0, Character.Rotation.Yaw, 0);
         TargetRotation = Character.Rotation;
+
+        Yaw = Character.Rotation.Yaw;
+        Pitch = Character.Rotation.Pitch;
+        PitchCurrent = Character.Rotation.Pitch;
+
         KinematicInformation = Character.KinematicInformation;
     }
 
@@ -426,12 +432,17 @@ public class MagicianController : MonoBehaviour
         bool Grounded = newChar.KinematicInformation.Grounded;
         bool Crouching = newChar.KinematicInformation.Crouched;
         bool Falling = newChar.KinematicInformation.Falling;
+        bool Landed = oldChar.KinematicInformation.Grounded is false && newChar.KinematicInformation.Grounded is true;
 
         if (Animator != null)
         {
             if (Jump) { 
                 Animator.SetTrigger("Jump");
-                MatchManager.Instance.AudioManager.PlayJumpSound(IsOwner);
+                WorldAudioManager.PlayJumpSound();
+            }
+
+            if (Landed) {
+                WorldAudioManager.PlayLandSound();
             }
 
             if (Attack) {

@@ -169,19 +169,18 @@ pub fn try_force_overlap_for_entry(ctx: &ReducerContext, character: &mut Magicia
     if entry.entry_type != CollisionEntryType::Map { return false; }
     if was_grounded == false && character.kinematic_information.grounded == false { return false; }
 
-    let upward_velocity_block_threshold: f32 = 0.03;
+    let upward_velocity_block_threshold: f32 = 0.08;
     if character.requested_velocity.y > upward_velocity_block_threshold { return false; }
 
     let world_up = DbVector3 { x: 0.0, y: 1.0, z: 0.0 };
 
     let min_ground_dot: f32 = 0.75;
-    let floor_up_dot: f32 = 0.98;
+    let floor_up_dot: f32 = 0.95;
 
-    let max_vertical_gap_ramp: f32 = 0.02; // 0.04
-    let max_vertical_snap: f32 = 0.01; // 0.02
-
-    let tiny_overlap: f32 = 0.0005;
-    let overlap_enable_gap: f32 = 0.01;
+    let max_vertical_gap_ramp: f32 = 0.04;
+    let max_vertical_snap: f32 = 0.01;
+    let tiny_overlap: f32 = 0.01;
+    let overlap_enable_gap: f32 = 0.02;
 
     let collider_a = &character.collider;
 

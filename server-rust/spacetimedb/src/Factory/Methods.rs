@@ -1,10 +1,10 @@
-use spacetimedb::{ReducerContext, Table, Identity};
 use crate::*;
 
 pub fn create_magician(config: MagicianConfig) -> Magician { // Creates new magician and returns - Does not insert on it's own
     let player = config.player;
     let game_id = config.game_id;
     let position = config.position;
+    let rotation = config.rotation;
     
     let bullet_capacity: u8 = 8;
     let mut bullets: Vec<ThrowingCard> = Vec::with_capacity(bullet_capacity as usize);
@@ -18,11 +18,11 @@ pub fn create_magician(config: MagicianConfig) -> Magician { // Creates new magi
         name: player.name,
         game_id,
         position,
-        rotation: DbRotation2 { yaw: 0.0, pitch: 0.0 },
+        rotation,
         requested_velocity: DbVector3 { x: 0.0, y: 0.0, z: 0.0 },
         corrected_velocity: DbVector3 { x: 0.0, y: 0.0, z: 0.0 },
         state: MagicianState::Default,
-        kinematic_information: KinematicInformation { jump: false, falling: false, crouched: false, grounded: false, sprinting: false },
+        kinematic_information: KinematicInformation { jump: false, falling: false, crouched: false, grounded: true, sprinting: false },
         combat_information: CombatInformation { health: 200.0, max_health: 200.0, speed_multiplier: 1.0, game_score: 0},
         permissions: vec![
             PermissionEntry { key: "CanWalk".to_string(), subscribers: Vec::new() },
@@ -56,7 +56,7 @@ pub fn create_magician(config: MagicianConfig) -> Magician { // Creates new magi
         bullets: bullets,
         bullet_capacity: bullet_capacity,
         collider: MagicianIdleCollider(),
-        collision_entries: vec![CollisionEntry { entry_type: CollisionEntryType::Map, id: 1 }, CollisionEntry { entry_type: CollisionEntryType::Map, id: 2 }, CollisionEntry { entry_type: CollisionEntryType::Map, id: 3 }], // Auto registers initial possible collisions (Pipe & Pipe Platform)
+        collision_entries: vec![CollisionEntry { entry_type: CollisionEntryType::Map, id: 1 }, CollisionEntry { entry_type: CollisionEntryType::Map, id: 2 }, CollisionEntry { entry_type: CollisionEntryType::Map, id: 3 }, CollisionEntry { entry_type: CollisionEntryType::Map, id: 40 }, CollisionEntry { entry_type: CollisionEntryType::Map, id: 41 }, CollisionEntry { entry_type: CollisionEntryType::Map, id: 42 }, CollisionEntry { entry_type: CollisionEntryType::Map, id: 43 }], // Auto registers initial possible collisions (Pipe & Pipe Platform) aswell as world borders (permanent)
         is_colliding: false,
     };
 

@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void MoveMagiciansLagTest(SpacetimeDB.Types.MoveAllMagiciansTimer timer)
         {
-            conn.InternalCallReducer(new Reducer.MoveMagiciansLagTest(timer), this.SetCallReducerFlags.MoveMagiciansLagTestFlags);
+            conn.InternalCallReducer(new Reducer.MoveMagiciansLagTest(timer));
         }
 
         public bool InvokeMoveMagiciansLagTest(ReducerEventContext ctx, Reducer.MoveMagiciansLagTest args)
@@ -63,11 +63,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "move_magicians_lag_test";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags MoveMagiciansLagTestFlags;
-        public void MoveMagiciansLagTest(CallReducerFlags flags) => MoveMagiciansLagTestFlags = flags;
     }
 }

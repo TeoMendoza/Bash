@@ -46,4 +46,30 @@ namespace SpacetimeDB.Types
 
         public readonly MapHandle Map;
     }
+
+    public sealed class MapCols
+    {
+        public global::SpacetimeDB.Col<Map, ulong> Id { get; }
+        public global::SpacetimeDB.Col<Map, string> Name { get; }
+        public global::SpacetimeDB.Col<Map, ComplexCollider> Collider { get; }
+
+        public MapCols(string tableName)
+        {
+            Id = new global::SpacetimeDB.Col<Map, ulong>(tableName, "id");
+            Name = new global::SpacetimeDB.Col<Map, string>(tableName, "name");
+            Collider = new global::SpacetimeDB.Col<Map, ComplexCollider>(tableName, "collider");
+        }
+    }
+
+    public sealed class MapIxCols
+    {
+        public global::SpacetimeDB.IxCol<Map, ulong> Id { get; }
+        public global::SpacetimeDB.IxCol<Map, string> Name { get; }
+
+        public MapIxCols(string tableName)
+        {
+            Id = new global::SpacetimeDB.IxCol<Map, ulong>(tableName, "id");
+            Name = new global::SpacetimeDB.IxCol<Map, string>(tableName, "name");
+        }
+    }
 }

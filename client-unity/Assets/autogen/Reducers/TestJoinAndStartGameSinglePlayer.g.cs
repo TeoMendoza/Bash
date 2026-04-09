@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void TestJoinAndStartGameSinglePlayer()
         {
-            conn.InternalCallReducer(new Reducer.TestJoinAndStartGameSinglePlayer(), this.SetCallReducerFlags.TestJoinAndStartGameSinglePlayerFlags);
+            conn.InternalCallReducer(new Reducer.TestJoinAndStartGameSinglePlayer());
         }
 
         public bool InvokeTestJoinAndStartGameSinglePlayer(ReducerEventContext ctx, Reducer.TestJoinAndStartGameSinglePlayer args)
@@ -49,11 +49,5 @@ namespace SpacetimeDB.Types
         {
             string IReducerArgs.ReducerName => "test_join_and_start_game_single_player";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags TestJoinAndStartGameSinglePlayerFlags;
-        public void TestJoinAndStartGameSinglePlayer(CallReducerFlags flags) => TestJoinAndStartGameSinglePlayerFlags = flags;
     }
 }

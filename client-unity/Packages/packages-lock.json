@@ -12,7 +12,13 @@
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "a36db3c2a797b572abb0a7fbf3595db0b745c46a"
+      "hash": "e332c20da890e83751be54f1873943f3915283bd"
+    },
+    "com.unity.2d.sprite": {
+      "version": "1.0.0",
+      "depth": 0,
+      "source": "builtin",
+      "dependencies": {}
     },
     "com.unity.ai.navigation": {
       "version": "2.0.9",

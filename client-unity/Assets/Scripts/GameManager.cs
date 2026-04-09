@@ -3,25 +3,34 @@ using System.Collections;
 using System.Collections.Generic;
 using SpacetimeDB;
 using SpacetimeDB.Types;
+using Unity.Mathematics;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
-    const string SERVER_URL = "http://127.0.0.1:3000"; // For Self-Host Playable Version (LAN - Must Reget IP For New Networks): Use "http://10.0.0.68:3000" For Solo Deploy Testing & Use Cloudflare Quicktunnel URL; For Maincloud Milestone Playable Version Release: "https://maincloud.spacetimedb.com"; For Local Playable Version: "http://127.0.0.1:3000";
-    const string MODULE_NAME = "bash";
-
-    public static event Action OnConnected;
-    public static event Action OnSubscriptionApplied;
+    const string server_url = "http://127.0.0.1:3000"; // For Self-Host Playable Version (LAN - Must Reget IP For New Networks): Use "http://10.0.0.68:3001" For Solo Deploy Testing & Use Cloudflare Quicktunnel URL; For Maincloud Milestone Playable Version Release: "https://maincloud.spacetimedb.com"; For Local Playable Version: "http://127.0.0.1:3000";
+    const string database_name = "bash";
 
 	public static GameManager Instance { get; private set; }
+    public static Player Player { get; private set; }
     public static Identity LocalIdentity { get; private set; }
     public static DbConnection Conn { get; private set; }
+    public static int PlayerCount { get; set; } = 0;
     
     private void Start()
     {
         PlayerPrefs.DeleteAll();
+        
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         Instance = this;
+        
         Application.targetFrameRate = 60;
+        Application.runInBackground = true;
 
         // In order to build a connection to SpacetimeDB we need to register
         // our callbacks and specify a SpacetimeDB server URI and module name.
@@ -29,8 +38,9 @@ public class GameManager : MonoBehaviour
             .OnConnect(HandleConnect)
             .OnConnectError(HandleConnectError)
             .OnDisconnect(HandleDisconnect)
-            .WithUri(SERVER_URL)
-            .WithModuleName(MODULE_NAME);
+            .WithUri(server_url)
+            .WithDatabaseName(database_name)
+            .WithConfirmedReads(false);
 
         // If the user has a SpacetimeDB auth token stored in the Unity PlayerPrefs,
         // we can use it to authenticate the connection.
@@ -42,7 +52,6 @@ public class GameManager : MonoBehaviour
         // Building the connection will establish a connection to the SpacetimeDB
         // server.
         Conn = builder.Build();
-        MatchManager.Instance.InitializeMatchManager();
     }
 
     // Called when we connect to SpacetimeDB and receive our client identity
@@ -52,13 +61,22 @@ public class GameManager : MonoBehaviour
         AuthToken.SaveToken(token);
         LocalIdentity = identity;
 
-        
-        OnConnected?.Invoke();
-
         // Request all tables
         Conn.SubscriptionBuilder()
             .OnApplied(HandleSubscriptionApplied)
-            .SubscribeToAllTables();
+            .AddQuery(q => q.From.LoggedInPlayers())
+            .AddQuery(q => q.From.Game())
+            .AddQuery(q => q.From.Magician())
+            .AddQuery(q => q.From.GameTimers())
+            .AddQuery(q => q.From.RespawnTimers())
+            .AddQuery(q => q.From.PlayerEffects())
+            .AddQuery(q => q.From.Map())
+            .AddQuery(q => q.From.UnavailableRequestEvent())
+            .AddQuery(q => q.From.UnavailableRequestInterruptEvent())
+            .Subscribe();
+
+        Conn.Db.LoggedInPlayers.OnInsert += HandlePlayerLoggedIn;
+        Conn.Db.LoggedInPlayers.OnDelete += HandlePlayerLoggedOut;
     }
 
     void HandleConnectError(Exception ex)
@@ -77,8 +95,7 @@ public class GameManager : MonoBehaviour
 
     private void HandleSubscriptionApplied(SubscriptionEventContext ctx)
     {
-        Debug.Log("Subscription applied!");
-        OnSubscriptionApplied?.Invoke();
+        PlayerCount = ctx.Db.LoggedInPlayers.Count;
     }
 
     public static bool IsConnected()
@@ -90,6 +107,23 @@ public class GameManager : MonoBehaviour
     {
         Conn.Disconnect();
         Conn = null;
+        Player = null;
+        PlayerCount -= 1;
+    }
+
+    public void HandlePlayerLoggedIn(EventContext ctx, Player insertedPlayer)
+    {
+        if (insertedPlayer.Identity == LocalIdentity) {
+            Player = insertedPlayer;
+            MatchManager.Instance.InitializeMatchManager(Player);
+        }
+
+        PlayerCount += 1;
+    }
+
+    public void HandlePlayerLoggedOut(EventContext ctx, Player disconnectedPlayer)
+    {
+        PlayerCount -= 1;
     }
 }
 

@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void EnableUnitTestMode()
         {
-            conn.InternalCallReducer(new Reducer.EnableUnitTestMode(), this.SetCallReducerFlags.EnableUnitTestModeFlags);
+            conn.InternalCallReducer(new Reducer.EnableUnitTestMode());
         }
 
         public bool InvokeEnableUnitTestMode(ReducerEventContext ctx, Reducer.EnableUnitTestMode args)
@@ -49,11 +49,5 @@ namespace SpacetimeDB.Types
         {
             string IReducerArgs.ReducerName => "enable_unit_test_mode";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags EnableUnitTestModeFlags;
-        public void EnableUnitTestMode(CallReducerFlags flags) => EnableUnitTestModeFlags = flags;
     }
 }

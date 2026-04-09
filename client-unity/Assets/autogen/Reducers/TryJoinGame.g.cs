@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void TryJoinGame()
         {
-            conn.InternalCallReducer(new Reducer.TryJoinGame(), this.SetCallReducerFlags.TryJoinGameFlags);
+            conn.InternalCallReducer(new Reducer.TryJoinGame());
         }
 
         public bool InvokeTryJoinGame(ReducerEventContext ctx, Reducer.TryJoinGame args)
@@ -49,11 +49,5 @@ namespace SpacetimeDB.Types
         {
             string IReducerArgs.ReducerName => "try_join_game";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags TryJoinGameFlags;
-        public void TryJoinGame(CallReducerFlags flags) => TryJoinGameFlags = flags;
     }
 }

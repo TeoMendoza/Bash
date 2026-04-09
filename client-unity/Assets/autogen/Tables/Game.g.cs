@@ -46,4 +46,34 @@ namespace SpacetimeDB.Types
 
         public readonly GameHandle Game;
     }
+
+    public sealed class GameCols
+    {
+        public global::SpacetimeDB.Col<Game, uint> Id { get; }
+        public global::SpacetimeDB.Col<Game, bool> InProgress { get; }
+        public global::SpacetimeDB.Col<Game, uint> MaxPlayers { get; }
+        public global::SpacetimeDB.Col<Game, uint> CurrentPlayers { get; }
+        public global::SpacetimeDB.Col<Game, Scoreboard> Scoreboard { get; }
+
+        public GameCols(string tableName)
+        {
+            Id = new global::SpacetimeDB.Col<Game, uint>(tableName, "id");
+            InProgress = new global::SpacetimeDB.Col<Game, bool>(tableName, "in_progress");
+            MaxPlayers = new global::SpacetimeDB.Col<Game, uint>(tableName, "max_players");
+            CurrentPlayers = new global::SpacetimeDB.Col<Game, uint>(tableName, "current_players");
+            Scoreboard = new global::SpacetimeDB.Col<Game, Scoreboard>(tableName, "scoreboard");
+        }
+    }
+
+    public sealed class GameIxCols
+    {
+        public global::SpacetimeDB.IxCol<Game, uint> Id { get; }
+        public global::SpacetimeDB.IxCol<Game, bool> InProgress { get; }
+
+        public GameIxCols(string tableName)
+        {
+            Id = new global::SpacetimeDB.IxCol<Game, uint>(tableName, "id");
+            InProgress = new global::SpacetimeDB.IxCol<Game, bool>(tableName, "in_progress");
+        }
+    }
 }

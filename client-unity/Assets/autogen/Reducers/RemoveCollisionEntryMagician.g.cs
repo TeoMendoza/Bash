@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void RemoveCollisionEntryMagician(SpacetimeDB.Types.CollisionEntry entry, SpacetimeDB.Identity targetIdentity)
         {
-            conn.InternalCallReducer(new Reducer.RemoveCollisionEntryMagician(entry, targetIdentity), this.SetCallReducerFlags.RemoveCollisionEntryMagicianFlags);
+            conn.InternalCallReducer(new Reducer.RemoveCollisionEntryMagician(entry, targetIdentity));
         }
 
         public bool InvokeRemoveCollisionEntryMagician(ReducerEventContext ctx, Reducer.RemoveCollisionEntryMagician args)
@@ -51,7 +51,7 @@ namespace SpacetimeDB.Types
         {
             [DataMember(Name = "entry")]
             public CollisionEntry Entry;
-            [DataMember(Name = "_target_identity")]
+            [DataMember(Name = "target_identity")]
             public SpacetimeDB.Identity TargetIdentity;
 
             public RemoveCollisionEntryMagician(
@@ -70,11 +70,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "remove_collision_entry_magician";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags RemoveCollisionEntryMagicianFlags;
-        public void RemoveCollisionEntryMagician(CallReducerFlags flags) => RemoveCollisionEntryMagicianFlags = flags;
     }
 }

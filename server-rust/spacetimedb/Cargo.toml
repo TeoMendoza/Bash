@@ -9,6 +9,6 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-spacetimedb = "1.11.*"
+spacetimedb = "2.1.0"
 log = "0.4"
-glam = "0.30.9"
+glam = "0.32.0"

@@ -56,4 +56,64 @@ namespace SpacetimeDB.Types
 
         public readonly MagicianHandle Magician;
     }
+
+    public sealed class MagicianCols
+    {
+        public global::SpacetimeDB.Col<Magician, SpacetimeDB.Identity> Identity { get; }
+        public global::SpacetimeDB.Col<Magician, ulong> Id { get; }
+        public global::SpacetimeDB.Col<Magician, uint> GameId { get; }
+        public global::SpacetimeDB.Col<Magician, string> Name { get; }
+        public global::SpacetimeDB.Col<Magician, DbVector3> Position { get; }
+        public global::SpacetimeDB.Col<Magician, DbRotation2> Rotation { get; }
+        public global::SpacetimeDB.Col<Magician, DbVector3> RequestedVelocity { get; }
+        public global::SpacetimeDB.Col<Magician, DbVector3> CorrectedVelocity { get; }
+        public global::SpacetimeDB.Col<Magician, ComplexCollider> Collider { get; }
+        public global::SpacetimeDB.Col<Magician, System.Collections.Generic.List<CollisionEntry>> CollisionEntries { get; }
+        public global::SpacetimeDB.Col<Magician, bool> IsColliding { get; }
+        public global::SpacetimeDB.Col<Magician, MagicianState> State { get; }
+        public global::SpacetimeDB.Col<Magician, KinematicInformation> KinematicInformation { get; }
+        public global::SpacetimeDB.Col<Magician, CombatInformation> CombatInformation { get; }
+        public global::SpacetimeDB.Col<Magician, System.Collections.Generic.List<PermissionEntry>> Permissions { get; }
+        public global::SpacetimeDB.Col<Magician, System.Collections.Generic.List<StatelessTimer>> StatelessTimers { get; }
+        public global::SpacetimeDB.Col<Magician, System.Collections.Generic.List<Timer>> Timers { get; }
+        public global::SpacetimeDB.Col<Magician, System.Collections.Generic.List<ThrowingCard>> Bullets { get; }
+        public global::SpacetimeDB.Col<Magician, byte> BulletCapacity { get; }
+
+        public MagicianCols(string tableName)
+        {
+            Identity = new global::SpacetimeDB.Col<Magician, SpacetimeDB.Identity>(tableName, "identity");
+            Id = new global::SpacetimeDB.Col<Magician, ulong>(tableName, "id");
+            GameId = new global::SpacetimeDB.Col<Magician, uint>(tableName, "game_id");
+            Name = new global::SpacetimeDB.Col<Magician, string>(tableName, "name");
+            Position = new global::SpacetimeDB.Col<Magician, DbVector3>(tableName, "position");
+            Rotation = new global::SpacetimeDB.Col<Magician, DbRotation2>(tableName, "rotation");
+            RequestedVelocity = new global::SpacetimeDB.Col<Magician, DbVector3>(tableName, "requested_velocity");
+            CorrectedVelocity = new global::SpacetimeDB.Col<Magician, DbVector3>(tableName, "corrected_velocity");
+            Collider = new global::SpacetimeDB.Col<Magician, ComplexCollider>(tableName, "collider");
+            CollisionEntries = new global::SpacetimeDB.Col<Magician, System.Collections.Generic.List<CollisionEntry>>(tableName, "collision_entries");
+            IsColliding = new global::SpacetimeDB.Col<Magician, bool>(tableName, "is_colliding");
+            State = new global::SpacetimeDB.Col<Magician, MagicianState>(tableName, "state");
+            KinematicInformation = new global::SpacetimeDB.Col<Magician, KinematicInformation>(tableName, "kinematic_information");
+            CombatInformation = new global::SpacetimeDB.Col<Magician, CombatInformation>(tableName, "combat_information");
+            Permissions = new global::SpacetimeDB.Col<Magician, System.Collections.Generic.List<PermissionEntry>>(tableName, "permissions");
+            StatelessTimers = new global::SpacetimeDB.Col<Magician, System.Collections.Generic.List<StatelessTimer>>(tableName, "stateless_timers");
+            Timers = new global::SpacetimeDB.Col<Magician, System.Collections.Generic.List<Timer>>(tableName, "timers");
+            Bullets = new global::SpacetimeDB.Col<Magician, System.Collections.Generic.List<ThrowingCard>>(tableName, "bullets");
+            BulletCapacity = new global::SpacetimeDB.Col<Magician, byte>(tableName, "bullet_capacity");
+        }
+    }
+
+    public sealed class MagicianIxCols
+    {
+        public global::SpacetimeDB.IxCol<Magician, SpacetimeDB.Identity> Identity { get; }
+        public global::SpacetimeDB.IxCol<Magician, ulong> Id { get; }
+        public global::SpacetimeDB.IxCol<Magician, uint> GameId { get; }
+
+        public MagicianIxCols(string tableName)
+        {
+            Identity = new global::SpacetimeDB.IxCol<Magician, SpacetimeDB.Identity>(tableName, "identity");
+            Id = new global::SpacetimeDB.IxCol<Magician, ulong>(tableName, "id");
+            GameId = new global::SpacetimeDB.IxCol<Magician, uint>(tableName, "game_id");
+        }
+    }
 }

@@ -1,4 +1,5 @@
 use glam::{Quat, Vec3};
+use spacetimedb::ReducerContext;
 use crate::*;
 
 pub fn add(x: DbVector3, y: DbVector3) -> DbVector3 { DbVector3 { x: x.x + y.x, y: x.y + y.y, z: x.z + y.z } }
@@ -73,7 +74,7 @@ pub fn get_collider_center_world(collider: &ComplexCollider, position: DbVector3
     add(position, rotated_center)
 }
 
-pub fn compute_contact_normal(raw_normal: DbVector3, center_a: DbVector3, center_b: DbVector3) -> DbVector3 { // Orients collision normal outward towards target (center_a) - Rounds normals to approximate collisions
+pub fn compute_contact_normal(_ctx: &ReducerContext, raw_normal: DbVector3, center_a: DbVector3, center_b: DbVector3) -> DbVector3 { // Orients collision normal outward towards target (center_a) - Rounds normals to approximate collisions
     let mut normal = raw_normal;
     if dot(normal, normal) < 1e-6 { return DbVector3 { x: 0.0, y: 1.0, z: 0.0 }; }
     normal = normalize(normal);

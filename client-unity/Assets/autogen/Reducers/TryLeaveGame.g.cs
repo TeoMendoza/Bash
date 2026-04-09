@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void TryLeaveGame()
         {
-            conn.InternalCallReducer(new Reducer.TryLeaveGame(), this.SetCallReducerFlags.TryLeaveGameFlags);
+            conn.InternalCallReducer(new Reducer.TryLeaveGame());
         }
 
         public bool InvokeTryLeaveGame(ReducerEventContext ctx, Reducer.TryLeaveGame args)
@@ -49,11 +49,5 @@ namespace SpacetimeDB.Types
         {
             string IReducerArgs.ReducerName => "try_leave_game";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags TryLeaveGameFlags;
-        public void TryLeaveGame(CallReducerFlags flags) => TryLeaveGameFlags = flags;
     }
 }

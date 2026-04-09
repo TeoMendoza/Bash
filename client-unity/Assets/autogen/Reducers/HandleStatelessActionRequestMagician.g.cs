@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void HandleStatelessActionRequestMagician(SpacetimeDB.Types.StatelessActionRequestMagician request)
         {
-            conn.InternalCallReducer(new Reducer.HandleStatelessActionRequestMagician(request), this.SetCallReducerFlags.HandleStatelessActionRequestMagicianFlags);
+            conn.InternalCallReducer(new Reducer.HandleStatelessActionRequestMagician(request));
         }
 
         public bool InvokeHandleStatelessActionRequestMagician(ReducerEventContext ctx, Reducer.HandleStatelessActionRequestMagician args)
@@ -63,11 +63,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "handle_stateless_action_request_magician";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags HandleStatelessActionRequestMagicianFlags;
-        public void HandleStatelessActionRequestMagician(CallReducerFlags flags) => HandleStatelessActionRequestMagicianFlags = flags;
     }
 }

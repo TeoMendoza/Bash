@@ -22,13 +22,19 @@ pub fn adjust_grounded(_ctx: &ReducerContext, was_grounded: bool, move_velocity:
 }
 
 pub fn resolve_contacts(magician: &mut Magician, contacts: &Vec<CollisionContact>) { // Handles correcting velocity and position between player and it's contacts (objects it is colliding with)
+    let small_vertical_deadzone: f32 = 0.02;
+
+    if magician.requested_velocity.y.abs() <= small_vertical_deadzone {
+        magician.requested_velocity.y = 0.0;
+    }
+
     let input_velocity = magician.requested_velocity;
     let world_up = DbVector3 { x: 0.0, y: 1.0, z: 0.0 };
     let min_ground_dot: f32 = 0.75;
     let depth_epsilon: f32 = 2e-3;
     let max_depth: f32 = 0.08;
     let correction_factor: f32 = 0.5;
-    let target_penetration: f32 = 0.01;
+    let target_penetration: f32 = 0.0025;
     let max_position_correction: f32 = 0.015;
     let ground_stick_up_threshold: f32 = 0.03;
     let input_up_cancel_threshold: f32 = 0.03;
@@ -126,7 +132,7 @@ pub fn try_build_contact_for_entry(ctx: &ReducerContext, character_local: &Magic
         let center_b_world = get_collider_center_world(&other_magician.collider, position_b, yaw_radians_b);
 
         if epa_solve(&gjk_result, collider_a, position_a, yaw_radians_a, collider_b, position_b, yaw_radians_b, &mut epa_contact) {
-            let contact_normal = compute_contact_normal(epa_contact.normal, center_a_world, center_b_world);
+            let contact_normal = compute_contact_normal(&ctx, epa_contact.normal, center_a_world, center_b_world);
             contacts.push(CollisionContact { normal: contact_normal, penetration_depth: epa_contact.depth, collision_type: CollisionEntryType::Magician });
             return true;
         }
@@ -148,7 +154,7 @@ pub fn try_build_contact_for_entry(ctx: &ReducerContext, character_local: &Magic
         let center_b_world = get_collider_center_world(&map_piece.collider, position_b, yaw_radians_b);
 
         if epa_solve(&gjk_result, collider_a, position_a, yaw_radians_a, collider_b, position_b, yaw_radians_b, &mut epa_contact) {
-            let contact_normal = compute_contact_normal(epa_contact.normal, center_a_world, center_b_world);
+            let contact_normal = compute_contact_normal(&ctx, epa_contact.normal, center_a_world, center_b_world);
             contacts.push(CollisionContact { normal: contact_normal, penetration_depth: epa_contact.depth, collision_type: CollisionEntryType::Map });
             return true;
         }
@@ -163,19 +169,18 @@ pub fn try_force_overlap_for_entry(ctx: &ReducerContext, character: &mut Magicia
     if entry.entry_type != CollisionEntryType::Map { return false; }
     if was_grounded == false && character.kinematic_information.grounded == false { return false; }
 
-    let upward_velocity_block_threshold: f32 = 0.03;
+    let upward_velocity_block_threshold: f32 = 0.08;
     if character.requested_velocity.y > upward_velocity_block_threshold { return false; }
 
     let world_up = DbVector3 { x: 0.0, y: 1.0, z: 0.0 };
 
     let min_ground_dot: f32 = 0.75;
-    let floor_up_dot: f32 = 0.98;
+    let floor_up_dot: f32 = 0.95;
 
-    let max_vertical_gap_ramp: f32 = 0.045;
+    let max_vertical_gap_ramp: f32 = 0.04;
     let max_vertical_snap: f32 = 0.01;
-
-    let tiny_overlap: f32 = 0.0005;
-    let overlap_enable_gap: f32 = 0.01;
+    let tiny_overlap: f32 = 0.01;
+    let overlap_enable_gap: f32 = 0.02;
 
     let collider_a = &character.collider;
 
@@ -198,7 +203,7 @@ pub fn try_force_overlap_for_entry(ctx: &ReducerContext, character: &mut Magicia
     let center_a_world = get_collider_center_world(&collider_a, position_a, yaw_a);
     let center_b_world = get_collider_center_world(&collider_b, position_b, yaw_b);
 
-    let contact_normal = compute_contact_normal(distance_result.separation_direction, center_a_world, center_b_world);
+    let contact_normal = compute_contact_normal(&ctx, distance_result.separation_direction, center_a_world, center_b_world);
 
     let up_dot: f32 = dot(contact_normal, world_up);
     if up_dot < min_ground_dot { return false; }
@@ -237,8 +242,9 @@ pub fn try_perform_attack(ctx: &ReducerContext, magician: &mut Magician, attack_
     let bullet_option = magician.bullets.pop();
     if bullet_option.is_none() { return; } // Should be gated inside action request - Safegaurd regardless
 
-    let bullet = bullet_option.unwrap();
-    let effects = bullet.effects;
+    let mut bullet = bullet_option.unwrap();
+    let effects = &mut bullet.effects;
+    let damage_effect = effects.iter_mut().find(|e| e.effect_type == EffectType::Damage).expect("Bullet Must Have Damage Effect!").damage_information.as_mut().unwrap();
 
     let magician_position = magician.position;
     let magician_yaw_radians: f32 = to_radians(magician.rotation.yaw);
@@ -263,7 +269,18 @@ pub fn try_perform_attack(ctx: &ReducerContext, magician: &mut Magician, attack_
 
     let shot_hit = raycast_match(ctx, spawn_point, shot_direction, attack_information.max_distance); // Checks for a hit based on the rebuilt data (single target)
     if shot_hit.hit && shot_hit.hit_type == RaycastHitType::Magician {
-        add_effects_to_table(ctx, effects, shot_hit.hit_entity_id, magician.id, magician.game_id);
+
+        damage_effect.target_name = shot_hit.hit_name;
+        damage_effect.sender_name = magician.name.clone();
+
+        match shot_hit.collider_type {
+            ConvexHullColliderType::Leg => damage_effect.damage_type = DamageType::Leg { multiplier: 0.5 },
+            ConvexHullColliderType::Body => damage_effect.damage_type = DamageType::Body { multiplier: 1.0 },
+            ConvexHullColliderType::Head => damage_effect.damage_type = DamageType::Head { multiplier: 2.0 },
+            _ => panic!("Magician Raycast Hit Must Have A Body Part Collider Type")
+        };
+
+        add_effects_to_table(ctx, effects.to_vec(), shot_hit.hit_entity_id, magician.id, magician.game_id);
     }
 } 
 
@@ -291,7 +308,7 @@ pub fn try_perform_dust(ctx: &ReducerContext, magician: &mut Magician, dust_info
 
     let hits: Vec<Raycast> = raycast_cone_match(ctx, spawn_point, cone_direction, dust_information.max_distance, dust_information.cone_half_angle_degrees); // Checks for a hit based on the rebuilt data (multi target - cone shape)
     for hit in hits {
-        let dust_effect = create_dust_effect(2.0);
+        let dust_effect = create_dust_effect(2.5);
         let effects: Vec<Effect> = vec![dust_effect];
         add_effects_to_table(ctx, effects, hit.hit_entity_id, magician.id, magician.game_id);
     }
@@ -506,4 +523,15 @@ pub fn try_find_stateless_timer<'a>(timers: &'a mut [StatelessTimer], key: &str)
         }
     }
     panic!("Timer not found: {}", key);
+}
+
+pub fn try_transition_to_reload(magician: &mut Magician) { // Switches to reload state automatically if no bullets
+    if magician.bullets.len() > 0 { 
+        magician.state = MagicianState::Default;
+    } 
+    
+    else {
+        magician.state = MagicianState::Reload;
+        add_subscriber_to_permission(&mut magician.permissions, "CanReload", "Reload");
+    }
 }

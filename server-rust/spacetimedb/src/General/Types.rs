@@ -1,4 +1,4 @@
-use spacetimedb::{SpacetimeType};
+use spacetimedb::{Identity, SpacetimeType};
 
 #[derive(SpacetimeType, Clone, Debug, Copy, Default)]
 pub struct DbVector3 {
@@ -67,4 +67,16 @@ pub struct StatelessTimer {
 pub enum StatelessTimerState {
     Useable,
     InCooldown
+}
+
+#[derive(SpacetimeType, Clone, Debug)]
+pub struct Scoreboard {
+    pub players: Vec<ScoreboardPlayer>
+}
+
+#[derive(SpacetimeType, Clone, Debug)]
+pub struct ScoreboardPlayer {
+    pub identity: Identity,
+    pub name: String,
+    pub score: u64,
 }

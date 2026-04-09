@@ -5,20 +5,22 @@ use crate::*;
 pub fn handle_player_effects_table(ctx: &ReducerContext, timer: PlayerEffectsTableTimer) { // Handles effects on players in specified game - Effects Type Cases: single, duration, reapply, indefinite
     let time = timer.tick_rate;
     for mut player_effect in ctx.db.player_effects().game_id().filter(timer.game_id) {
-        let target_option = ctx.db.magician().id().find(player_effect.target_id);
+        let sender_id = player_effect.sender_id; let target_id = player_effect.target_id;
+        let target_option = ctx.db.magician().id().find(target_id);
+        let mut sender_option = ctx.db.magician().id().find(sender_id);
+        
         if target_option.is_none() { // Deletes and continues if target no longer exists
             ctx.db.player_effects().id().delete(player_effect.id);
             continue;
         }
-
+        
         let mut target = target_option.expect("Target Magician Existence Already Confirmed!");
-        let mut _sender_option = ctx.db.magician().id().find(player_effect.sender_id); // Will be used to reward points to attacker (WIP)
         let player_effect_clone = player_effect.effect_info.clone(); // Double mutable borrow bypass
         let app_info = &mut player_effect.effect_info.application_information;
 
         match app_info.application_type {
             ApplicationType::Single => { // Case: single - Single effects are applied once then subsequently deleted
-                match_and_apply_single_effect(ctx, &mut target, &player_effect_clone);
+                match_and_apply_single_effect(ctx, &mut target, sender_option.as_mut(), &player_effect_clone);
                 ctx.db.player_effects().id().delete(player_effect.id);
             },
 
@@ -77,9 +79,9 @@ pub fn handle_player_effects_table(ctx: &ReducerContext, timer: PlayerEffectsTab
             }
         }
         
-        if ctx.db.magician().id().find(target.id).is_some() {
-            ctx.db.magician().id().update(target); // Updates target of effect - Recheck existence because effect can kill them in which case they will not exist anymore
-        } 
+        if ctx.db.magician().id().find(target_id).is_some() {
+            ctx.db.magician().identity().update(target); // Updates target of effect - Recheck existence because effect can kill them in which case they will not exist anymore
+        }
     }
 }
 
@@ -88,7 +90,7 @@ pub fn add_effects_to_table(ctx: &ReducerContext, effects: Vec<Effect>, target_i
     if let Some(magician) = magician_option {
         if is_permission_unblocked(&magician.permissions, "Invincibled") { // If target is invincible, skip effect inserts
             for effect in effects {
-                let effect_to_add = PlayerEffect { id: 0, target_id: target_id, sender_id: sender_id, game_id: game_id, effect_info: effect, effect_type: effect.effect_type};
+                let effect_to_add = PlayerEffect { id: 0, target_id: target_id, sender_id: sender_id, game_id: game_id, effect_info: effect.clone(), effect_type: effect.effect_type.clone()};
                 ctx.db.player_effects().insert(effect_to_add);
             } 
             return true;
@@ -96,7 +98,7 @@ pub fn add_effects_to_table(ctx: &ReducerContext, effects: Vec<Effect>, target_i
 
         else if sender_id == target_id {  // Effects can still be added if invincible, but they must be self applied. N/A to magician kit - safegaurd for future characters
             for effect in effects {
-                let effect_to_add = PlayerEffect { id: 0, target_id: target_id, sender_id: sender_id, game_id: game_id, effect_info: effect, effect_type: effect.effect_type};
+                let effect_to_add = PlayerEffect { id: 0, target_id: target_id, sender_id: sender_id, game_id: game_id, effect_info: effect.clone(), effect_type: effect.effect_type.clone()};
                 ctx.db.player_effects().insert(effect_to_add);
             }
             return true;

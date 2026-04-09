@@ -1,4 +1,4 @@
-use spacetimedb::{Identity, ReducerContext, Table};
+use spacetimedb::{ReducerContext, Table};
 use crate::*;
 
 pub fn raycast_match(ctx: &ReducerContext, ray_origin: DbVector3, ray_direction: DbVector3, max_distance: f32) -> Raycast { // Returns single closest raycast target within max distance
@@ -6,15 +6,16 @@ pub fn raycast_match(ctx: &ReducerContext, ray_origin: DbVector3, ray_direction:
     let mut best_distance: f32 = max_distance;
     let mut best_point: DbVector3 = DbVector3 { x: 0.0, y: 0.0, z: 0.0 };
     let mut best_type: RaycastHitType = RaycastHitType::None;
-    let mut best_identity: Identity = Identity::default();
     let mut best_entity_id: u64 = 0;
+    let mut best_collider_type: ConvexHullColliderType = ConvexHullColliderType::None;
+    let mut best_hit_name: String = "".to_string();
 
     let ray_direction_unit: DbVector3 = normalize_small_vector(ray_direction, DbVector3 { x: 0.0, y: 0.0, z: 1.0 });
 
-    let magician_option = ctx.db.magician().identity().find(ctx.sender);
+    let magician_option = ctx.db.magician().identity().find(ctx.sender());
     if let Some(magician) = magician_option {
         for other in ctx.db.magician().game_id().filter(magician.game_id) {
-            if other.identity == ctx.sender { continue; }
+            if other.identity == ctx.sender() { continue; }
 
             let hit: Raycast = raycast_complex_collider(ray_origin, ray_direction_unit, best_distance, &other.collider, other.position, to_radians(other.rotation.yaw), RaycastHitType::Magician, other.id);
             if hit.hit && hit.hit_distance < best_distance {
@@ -23,6 +24,8 @@ pub fn raycast_match(ctx: &ReducerContext, ray_origin: DbVector3, ray_direction:
                 best_point = hit.hit_point;
                 best_type = hit.hit_type;
                 best_entity_id = hit.hit_entity_id;
+                best_collider_type = hit.collider_type;
+                best_hit_name = other.name.clone();
             }
         }
 
@@ -34,11 +37,13 @@ pub fn raycast_match(ctx: &ReducerContext, ray_origin: DbVector3, ray_direction:
                 best_point = hit.hit_point;
                 best_type = hit.hit_type;
                 best_entity_id = hit.hit_entity_id;
+                best_collider_type = hit.collider_type;
+                best_hit_name = "".to_string();
             }
         }
     }
 
-    Raycast { hit: has_hit, hit_distance: best_distance, hit_point: best_point, hit_type: best_type, hit_entity_id: best_entity_id }
+    Raycast { hit: has_hit, hit_distance: best_distance, hit_point: best_point, hit_type: best_type, hit_entity_id: best_entity_id, collider_type: best_collider_type, hit_name: best_hit_name }
 }
 
 pub fn raycast_cone_match(ctx: &ReducerContext, ray_origin: DbVector3, ray_forward: DbVector3, max_distance: f32, cone_half_angle_degrees: f32) -> Vec<Raycast> { // Returns all targets with cone of max distance - Target must be facing player (enables flash dodges)
@@ -49,10 +54,10 @@ pub fn raycast_cone_match(ctx: &ReducerContext, ray_origin: DbVector3, ray_forwa
     let auto_hit_distance: f32 = 1.25;
     let mut hits: Vec<Raycast> = Vec::new();
 
-    let magician_option = ctx.db.magician().identity().find(ctx.sender);
+    let magician_option = ctx.db.magician().identity().find(ctx.sender());
     if let Some(magician) = magician_option { 
         for other in ctx.db.magician().game_id().filter(magician.game_id) {
-            if other.identity == ctx.sender { continue; }
+            if other.identity == ctx.sender() { continue; }
 
             let other_yaw_radians = to_radians(other.rotation.yaw);
             let other_center_world = get_collider_center_world(&other.collider, other.position, other_yaw_radians);
@@ -63,7 +68,15 @@ pub fn raycast_cone_match(ctx: &ReducerContext, ray_origin: DbVector3, ray_forwa
             if center_distance > max_distance { continue; }
 
             if center_distance <= auto_hit_distance { // Sensitive zone where raycast detection is wonky due to origin being outside of player hitbox
-                hits.push(Raycast { hit: true, hit_distance: center_distance, hit_point: other_center_world, hit_type: RaycastHitType::Magician, hit_entity_id: other.id });
+                hits.push(Raycast {
+                    hit: true,
+                    hit_distance: center_distance,
+                    hit_point: other_center_world,
+                    hit_type: RaycastHitType::Magician,
+                    hit_entity_id: other.id,
+                    collider_type: ConvexHullColliderType::None,
+                    hit_name: other.name.clone()
+                });
                 continue;
             }
 
@@ -81,12 +94,12 @@ pub fn raycast_cone_match(ctx: &ReducerContext, ray_origin: DbVector3, ray_forwa
     hits
 }
 
-
 pub fn raycast_complex_collider(ray_origin: DbVector3, ray_direction_unit: DbVector3, max_distance: f32, collider: &ComplexCollider, collider_world_position: DbVector3, collider_yaw_radians: f32, hit_type: RaycastHitType, hit_entity_id: u64) -> Raycast // Raycast logic pipeline that functions with engine collider system
 {
     let mut has_hit: bool = false;
     let mut best_distance: f32 = max_distance;
     let mut best_point: DbVector3 = DbVector3 { x: 0.0, y: 0.0, z: 0.0 };
+    let mut best_collider_type: ConvexHullColliderType = ConvexHullColliderType::None;
 
     let local_origin: DbVector3 = rotate_around_y_axis(sub(ray_origin, collider_world_position), -collider_yaw_radians);
     let local_direction: DbVector3 = rotate_around_y_axis(ray_direction_unit, -collider_yaw_radians);
@@ -96,19 +109,21 @@ pub fn raycast_complex_collider(ray_origin: DbVector3, ray_direction_unit: DbVec
         if raycast_convex_hull_triangles(local_origin, local_direction, best_distance, hull, &mut hit_distance_local) {
             has_hit = true;
             best_distance = hit_distance_local;
+            best_collider_type = hull.collider_type;
 
             let local_hit_point: DbVector3 = add(local_origin, mul(local_direction, hit_distance_local));
             best_point = add(collider_world_position, rotate_around_y_axis(local_hit_point, collider_yaw_radians));
         }
     }
 
-    Raycast { hit: has_hit, hit_distance: best_distance, hit_point: best_point, hit_type: if has_hit { hit_type } else { RaycastHitType::None }, hit_entity_id }
+    Raycast { hit: has_hit, hit_distance: best_distance, hit_point: best_point, hit_type: if has_hit { hit_type } else { RaycastHitType::None }, hit_entity_id: hit_entity_id, collider_type: if has_hit { best_collider_type } else { ConvexHullColliderType::None }, hit_name: "".to_string() }
 }
 
 pub fn raycast_complex_collider_world_space(ray_origin: DbVector3, ray_direction_unit: DbVector3, max_distance: f32, collider: &ComplexCollider, hit_type: RaycastHitType, hit_entity_id: u64) -> Raycast {
     let mut has_hit: bool = false;
     let mut best_distance: f32 = max_distance;
     let mut best_point: DbVector3 = DbVector3 { x: 0.0, y: 0.0, z: 0.0 };
+    let mut best_collider_type: ConvexHullColliderType = ConvexHullColliderType::None;
 
     for hull in collider.convex_hulls.iter() {
         let mut hit_distance: f32 = best_distance;
@@ -116,10 +131,11 @@ pub fn raycast_complex_collider_world_space(ray_origin: DbVector3, ray_direction
             has_hit = true;
             best_distance = hit_distance;
             best_point = add(ray_origin, mul(ray_direction_unit, hit_distance));
+            best_collider_type = hull.collider_type;
         }
     }
 
-    Raycast { hit: has_hit, hit_distance: best_distance, hit_point: best_point, hit_type: if has_hit { hit_type } else { RaycastHitType::None }, hit_entity_id }
+    Raycast { hit: has_hit,hit_distance: best_distance, hit_point: best_point, hit_type: if has_hit { hit_type } else { RaycastHitType::None }, hit_entity_id: hit_entity_id, collider_type: if has_hit { best_collider_type } else { ConvexHullColliderType::None }, hit_name: "".to_string() }
 }
 
 pub fn raycast_convex_hull_triangles(ray_origin_local: DbVector3, ray_direction_local: DbVector3, max_distance: f32, hull: &ConvexHullCollider, hit_distance_out: &mut f32) -> bool {

@@ -1,30 +1,38 @@
-use spacetimedb::{reducer, Identity, ReducerContext};
+use spacetimedb::{Identity, ReducerContext, Table, log_stopwatch::{self, LogStopwatch}, reducer};
 use crate::*;
+
 
 #[reducer]
 pub fn handle_movement_request_magician(ctx: &ReducerContext, request: MovementRequest) { // Handles player request for movement and looking
-    let magician_option = ctx.db.magician().identity().find(ctx.sender);
+    let magician_option = ctx.db.magician().identity().find(ctx.sender());
     if magician_option.is_none() { return; }
     let mut magician = magician_option.unwrap();
 
-    magician.rotation = request.aim;
     magician.requested_velocity = DbVector3 { x: 0.0, y: magician.requested_velocity.y, z: 0.0 }; // Y velocity processed in gravity reducer
     magician.kinematic_information.jump = false;
+    magician.kinematic_information.sprinting = false;
 
-    let speed_mutiplier = magician.combat_information.speed_multiplier;
+    let speed_multiplier = magician.combat_information.speed_multiplier;
     let stunned = is_permission_unblocked(&magician.permissions, "Stunned") == false;
     let taroted = is_permission_unblocked(&magician.permissions, "Taroted") == false;
+    let crouched = is_permission_unblocked(&magician.permissions, "CanCrouch") && request.crouch && stunned == false;
+
+    magician.kinematic_information.crouched = crouched;
+
+    if stunned == false {
+        magician.rotation = request.aim;
+    }
 
     if is_permission_unblocked(&magician.permissions, "CanWalk") && stunned == false {
         let mut local_x: f32 = 0.0;
         let mut local_z: f32 = 0.0;
 
         if request.move_forward && !request.move_backward { // Opposite direction requests cancel
-            local_z = 2.0;
+            local_z = 2.5;
         } 
         
         else if request.move_backward && !request.move_forward {
-            local_z = -2.0;
+            local_z = -2.5;
         }
 
         if request.move_right && !request.move_left {
@@ -35,13 +43,43 @@ pub fn handle_movement_request_magician(ctx: &ReducerContext, request: MovementR
             local_x = -2.0;
         }
 
-        if is_permission_unblocked(&magician.permissions, "CanRun") && request.sprint && request.move_forward && !request.move_backward { // Stronger forward sprint - No backward sprint currently
-            local_z *= 2.5;
+        let forward_sprinting =
+            is_permission_unblocked(&magician.permissions, "CanRun")
+            && request.sprint
+            && request.move_forward
+            && !request.move_backward;
+
+        let sideways_sprinting =
+            is_permission_unblocked(&magician.permissions, "CanRun")
+            && request.sprint
+            && (request.move_right != request.move_left);
+
+        if forward_sprinting { // Stronger forward sprint - Crouch sprint allowed, but weaker than normal sprint
+            if crouched {
+                local_z *= 1.5;
+            }
+
+            else {
+                local_z *= 2.5;
+            }
         }
 
-        if is_permission_unblocked(&magician.permissions, "CanRun") && request.sprint { // Weaker sideways sprint
-            local_x *= 1.5;
+        if sideways_sprinting { // Weaker sideways sprint - Also reduced while crouching
+            if crouched {
+                local_x *= 1.15;
+            }
+
+            else {
+                local_x *= 1.5;
+            }
         }
+
+        if crouched { // General crouch speed reduction, even while sprinting
+            local_x *= 0.5;
+            local_z *= 0.5;
+        }
+
+        magician.kinematic_information.sprinting = forward_sprinting;
 
         let yaw_radians: f32 = to_radians(magician.rotation.yaw);
         let cos_yaw: f32 = yaw_radians.cos();
@@ -50,32 +88,24 @@ pub fn handle_movement_request_magician(ctx: &ReducerContext, request: MovementR
         let world_x: f32 = cos_yaw * local_x + sin_yaw * local_z;
         let world_z: f32 = -sin_yaw * local_x + cos_yaw * local_z;
 
-        magician.requested_velocity = DbVector3 { x: world_x, y: magician.requested_velocity.y, z: world_z }; // Converts where player is looking into properly adjusted world speeds
+        magician.requested_velocity = DbVector3 { x: world_x * speed_multiplier, y: magician.requested_velocity.y, z: world_z * speed_multiplier }; 
+
+        if taroted {
+            magician.requested_velocity = DbVector3 { x: magician.requested_velocity.x * -1.0, y: magician.requested_velocity.y, z: magician.requested_velocity.z * -1.0 }
+        }
     }
 
     if is_permission_unblocked(&magician.permissions, "CanJump") && request.jump && stunned == false {
         magician.kinematic_information.jump = true;
-        magician.requested_velocity.y = 7.5;
+        magician.requested_velocity.y = 9.0;
     }
 
-    if is_permission_unblocked(&magician.permissions, "CanCrouch") && request.crouch && stunned == false {
-        magician.requested_velocity = DbVector3 { x: magician.requested_velocity.x * 0.5, y: magician.requested_velocity.y, z: magician.requested_velocity.z * 0.5 };
-        magician.kinematic_information.crouched = true;
-        add_subscriber_to_permission(&mut magician.permissions, "CanRun", "Crouch"); // Can't sprint while crouching
-    }
-
-    if !request.crouch || stunned == true { // Resets crouch if stunned
-        magician.kinematic_information.crouched = false;
-        remove_subscriber_from_permission(&mut magician.permissions, "CanRun", "Crouch"); // Sprint permission block removed
-    }
-
-    magician.requested_velocity = if taroted { DbVector3 { x: magician.requested_velocity.x * speed_mutiplier * -1.0, y: magician.requested_velocity.y, z: magician.requested_velocity.z * speed_mutiplier -1.0 } } else { DbVector3 { x: magician.requested_velocity.x * speed_mutiplier, y: magician.requested_velocity.y, z: magician.requested_velocity.z * speed_mutiplier } }; // Reverses movement if taroted
     ctx.db.magician().identity().update(magician);
 }
 
 #[reducer]
 pub fn handle_action_change_request_magician(ctx: &ReducerContext, request: ActionRequestMagician) { // Handles player request for action state - State cases: full block, interuptable, interuptable with cooldown
-    let magician_option = ctx.db.magician().identity().find(ctx.sender);
+    let magician_option = ctx.db.magician().identity().find(ctx.sender());
     if magician_option.is_none() { return; }
     let mut magician = magician_option.unwrap();
 
@@ -121,7 +151,12 @@ pub fn handle_action_change_request_magician(ctx: &ReducerContext, request: Acti
         add_subscriber_to_permission(&mut magician.permissions, "CanCloak", "Hypnosis");
     }
 
+    else if stunned == false && magician.state == MagicianState::Default {
+        ctx.db.unavailable_request_event().insert(UnavailableRequestEvent { identity: ctx.sender() });
+    }
+
     if old_state != magician.state {
+        ctx.db.unavailable_request_interrupt_event().insert(UnavailableRequestInterruptEvent { identity: ctx.sender() });
         adjust_timer_for_interruptable_state(&mut magician, old_state); // Adjusts timer according to type of state
         match old_state {
             MagicianState::Reload => { remove_subscriber_from_permission(&mut magician.permissions, "CanReload", "Reload"); } // Reload always available after interrupt (Case: interruptable)
@@ -132,7 +167,7 @@ pub fn handle_action_change_request_magician(ctx: &ReducerContext, request: Acti
         }
     }
 
-    if magician.state != MagicianState::Default && magician.state != MagicianState::Reload && magician.state != MagicianState::Cloak && magician.state != MagicianState::Stunned { // If magician takes offensive action, cloak effects if existing are interrupted
+    if magician.state != MagicianState::Default && magician.state != MagicianState::Reload && magician.state != MagicianState::Cloak { // If magician takes offensive action, cloak effects if existing are interrupted
         try_interrupt_cloak_and_speed_effects_magician(ctx, &mut magician);
     }
 
@@ -145,14 +180,14 @@ pub fn handle_action_change_request_magician(ctx: &ReducerContext, request: Acti
 
 #[reducer]
 pub fn handle_stateless_action_request_magician(ctx: &ReducerContext, request: StatelessActionRequestMagician) { // Handles player request for state that does not have a consume/use time
-    let magician_option = ctx.db.magician().identity().find(ctx.sender);
+    let magician_option = ctx.db.magician().identity().find(ctx.sender());
     if magician_option.is_none() { return; }
     let mut magician = magician_option.unwrap();
 
     let stunned = is_permission_unblocked(&magician.permissions, "Stunned") == false;
     let mut took_stateless_action = false;
 
-    if request.action == MagicianStatelessAction::Tarot && is_permission_unblocked(&magician.permissions, "CanTarot") && stunned == false { // Stateless actions still have cooldowns - Handled within the ability method itself
+    if request.action == MagicianStatelessAction::Tarot && is_permission_unblocked(&magician.permissions, "CanTarot") && stunned == false && magician.bullets.len() >= 1 { // Stateless actions still have cooldowns - Handled within the ability method itself
         try_tarot(ctx, &mut magician);
         add_subscriber_to_permission(&mut magician.permissions, "CanTarot", "Tarot");
         took_stateless_action = true;
@@ -172,14 +207,7 @@ pub fn handle_magician_timers(ctx: &ReducerContext, timer: HandleMagicianTimersT
         match magician.state { // Case: active state
             MagicianState::Attack => {
                 if tick_active_timer_and_check_expired(&mut magician, "Attack", time) { // Checks if consume/use time is over, resets permissions and state accordingly
-                    if magician.bullets.len() > 0 { // Switches to reload state automatically if no bullets
-                        magician.state = MagicianState::Default;
-                    } 
-                    
-                    else {
-                        magician.state = MagicianState::Reload;
-                        add_subscriber_to_permission(&mut magician.permissions, "CanReload", "Reload"); // Add To Every Other State To Ensure Transition Back To Reload (WIP)
-                    }
+                    try_transition_to_reload(&mut magician);
 
                     remove_subscriber_from_permission(&mut magician.permissions, "CanReload", "Attack");
                     remove_subscriber_from_permission(&mut magician.permissions, "CanDust", "Attack");
@@ -197,7 +225,8 @@ pub fn handle_magician_timers(ctx: &ReducerContext, timer: HandleMagicianTimersT
 
             MagicianState::Dust => {
                 if tick_active_timer_and_check_expired(&mut magician, "Dust", time) { // Checks if consume/use time is over, resets permissions and state accordingly
-                    magician.state = MagicianState::Default;
+                    try_transition_to_reload(&mut magician);
+
                     remove_subscriber_from_permission(&mut magician.permissions, "CanReload", "Dust");
                     remove_subscriber_from_permission(&mut magician.permissions, "CanAttack", "Dust");
                     remove_subscriber_from_permission(&mut magician.permissions, "CanCloak", "Dust");
@@ -207,14 +236,15 @@ pub fn handle_magician_timers(ctx: &ReducerContext, timer: HandleMagicianTimersT
 
             MagicianState::Cloak => {
                 if tick_active_timer_and_check_expired(&mut magician, "Cloak", time) { // Checks if consume/use time is over, resets permissions and state accordingly
-                    magician.state = MagicianState::Default;
+                    try_transition_to_reload(&mut magician);
                     try_cloak(ctx, &mut magician); // Cloak performed at end of use time - Ensures grace period for preventing cloak effect interruption
                 }
             }
 
             MagicianState::Hypnosis => {
                 if tick_active_timer_and_check_expired(&mut magician, "Hypnosis", time) { // Checks if consume/use time is over, resets permissions and state accordingly
-                    magician.state = MagicianState::Default;
+                    try_transition_to_reload(&mut magician);
+
                     remove_subscriber_from_permission(&mut magician.permissions, "CanReload", "Hypnosis");
                     remove_subscriber_from_permission(&mut magician.permissions, "CanAttack", "Hypnosis");
                     remove_subscriber_from_permission(&mut magician.permissions, "CanCloak", "Hypnosis");
@@ -307,7 +337,7 @@ pub fn remove_collision_entry_magician(ctx: &ReducerContext, entry: CollisionEnt
 pub fn move_magicians(ctx: &ReducerContext, timer: MoveAllMagiciansTimer) { // Handles moving players - Collision detection and response handled in this reducer
     let time: f32 = timer.tick_rate;
     let min_time_step: f32 = 1e-4;
-    let max_substeps: i32 = 8; // Splits work into repeated smaller work to reduce phasing
+    let max_substeps: i32 = 16; // Splits work into repeated smaller work to reduce phasing
 
     for mut magician in ctx.db.magician().game_id().filter(timer.game_id) {
         let was_grounded: bool = magician.kinematic_information.grounded; // Store previous tick grounded data - Used to prevent jitter switching between grounded and falling due to collision response
@@ -369,6 +399,37 @@ pub fn move_magicians(ctx: &ReducerContext, timer: MoveAllMagiciansTimer) { // H
 }
 
 #[reducer]
+pub fn handle_magician_colliders(ctx: &ReducerContext, timer: HandleMagicianCollidersTimer) {
+    for mut magician in ctx.db.magician().game_id().filter(timer.game_id) {
+        let kinematic_info = &magician.kinematic_information;
+        match kinematic_info.grounded {
+            true => {
+                if kinematic_info.crouched {
+                    magician.collider = MagicianCrouchCollider();
+                    break;
+                }
+
+                magician.collider = MagicianIdleCollider();
+
+            },
+
+            false => {
+
+                if kinematic_info.falling {
+                    magician.collider = MagicianFallingCollider();
+                    break;
+                }
+
+                magician.collider = MagicianJumpingCollider();
+            }
+
+        }
+
+        ctx.db.magician().identity().update(magician);
+    }
+}
+
+#[reducer]
 pub fn move_magicians_lag_test(ctx: &ReducerContext, timer: MoveAllMagiciansTimer) { // Test reducer to see lag difference and effect between basic movement simulation and our current physics simulation
     let time: f32 = timer.tick_rate;
     for mut magician in ctx.db.magician().game_id().filter(timer.game_id) {
@@ -389,7 +450,7 @@ pub fn move_magicians_lag_test(ctx: &ReducerContext, timer: MoveAllMagiciansTime
 
 #[reducer]
 pub fn hypnotise(ctx: &ReducerContext, camera_info: HypnosisCameraInformation) { // Handles hypnosis ability camera information and subsequent effect application
-    let magician_option = ctx.db.magician().identity().find(ctx.sender);
+    let magician_option = ctx.db.magician().identity().find(ctx.sender());
     if magician_option.is_none() { return; }
     let mut magician = magician_option.unwrap();
 
@@ -424,7 +485,7 @@ pub fn hypnotise(ctx: &ReducerContext, camera_info: HypnosisCameraInformation) {
                 
                 if let Some(stunned_effect) = stunned_effect_option {
                     undo_and_delete_stunned_effect_magician(ctx, &mut stunned_magician, stunned_effect.id);
-                    ctx.db.magician().id().update(stunned_magician);
+                    ctx.db.magician().identity().update(stunned_magician);
                 }
             }
             
@@ -455,7 +516,7 @@ pub fn hypnotise(ctx: &ReducerContext, camera_info: HypnosisCameraInformation) {
                 
                 if let Some(stunned_effect) = stunned_effect_option {
                     undo_and_delete_stunned_effect_magician(ctx, &mut stunned_magician, stunned_effect.id);
-                    ctx.db.magician().id().update(stunned_magician);
+                    ctx.db.magician().identity().update(stunned_magician);
                 }  
             }
             
@@ -469,3 +530,22 @@ pub fn hypnotise(ctx: &ReducerContext, camera_info: HypnosisCameraInformation) {
 }
 
 
+#[reducer]
+pub fn take_artifical_damage(ctx: &ReducerContext)
+{
+    let me_option = ctx.db.magician().identity().find(ctx.sender());
+    if let Some(me) = me_option {
+        let damage = create_damage_effect(25.0, "FakeKiller", "FakeKilled");
+        add_effects_to_table(ctx, vec![damage], me.id, me.id, me.game_id);
+    }
+}
+
+#[reducer]
+pub fn take_artifical_dust(ctx: &ReducerContext)
+{
+    let me_option = ctx.db.magician().identity().find(ctx.sender());
+    if let Some(me) = me_option {
+        let dust = create_dust_effect(2.5);
+        add_effects_to_table(ctx, vec![dust], me.id, me.id, me.game_id);
+    }
+}

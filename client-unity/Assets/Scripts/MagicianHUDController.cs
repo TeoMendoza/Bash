@@ -1,0 +1,470 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using NUnit.Framework.Constraints;
+using SpacetimeDB.Types;
+using TMPro;
+using Unity.VisualScripting;
+using UnityEngine;
+using UnityEngine.UI;
+using System.Collections;
+using System.Threading.Tasks;
+
+#nullable enable
+
+public class MagicianHUDController : MonoBehaviour
+{
+    [SerializeField] public Canvas HudCanvas;
+    [SerializeField] GameObject MagicianKitWidget;
+    [SerializeField] public CrosshairController CrosshairController;
+    [SerializeField] private RectTransform InstantHealthBar;
+    [SerializeField] private RectTransform DelayedHealthBar;
+    [SerializeField] private TextMeshProUGUI Health;
+    private float HealthBarWidth;
+    Coroutine? ActiveHealthBarCoroutine;
+    [SerializeField] float DelayedDurationSeconds = 0.25f;
+    [SerializeField] Image DelayedHealthBarImage;
+    [SerializeField] Color DelayedNormalColor = Color.white;
+    [SerializeField] Color DelayedDamageColor = Color.red;
+
+    [SerializeField] Image DustCloud;
+    [SerializeField] float DustCloudFadeSeconds = 0.1f;
+    Coroutine? ActiveDustCloudCoroutine;
+    
+    [SerializeField] private TextMeshProUGUI Ammo;
+    [SerializeField] private Image AmmoIcon;
+
+    [SerializeField] private TextMeshProUGUI TarotTime;
+    [SerializeField] private Image TarotIcon;
+
+    [SerializeField] private TextMeshProUGUI DustTime;
+    [SerializeField] private Image DustIcon;
+
+    [SerializeField] private TextMeshProUGUI CloakTime;
+    [SerializeField] private Image CloakIcon;
+
+    [SerializeField] private TextMeshProUGUI HypnosisTime;
+    [SerializeField] private Image HypnosisIcon;
+
+    private HudEffect?[] HudEffects = new HudEffect?[5];
+    private Coroutine?[] FlashCoroutines = new Coroutine?[5];
+
+    private Dictionary<int, Image> HudEffectsIcons = new();
+
+    [SerializeField] private Image EffectIcon1;
+    [SerializeField] private Image EffectIcon2;
+    [SerializeField] private Image EffectIcon3;
+    [SerializeField] private Image EffectIcon4;
+    [SerializeField] private Image EffectIcon5;
+
+    [SerializeField] SkinnedMeshRenderer Skin;
+    [SerializeField] private Sprite CloakEffectIcon;
+    [SerializeField] private Sprite SpeedEffectIcon;
+    [SerializeField] private Sprite InvincibleEffectIcon;
+    [SerializeField] private Sprite HypnosisEffectIcon;
+    [SerializeField] private Sprite TarotEffectIcon;
+    [SerializeField] private Sprite DustEffectIcon;
+    [SerializeField] private Sprite NoneEffectIcon;
+
+    void Update()
+    {
+        if (Input.GetKey(KeyCode.Tab)) 
+            MagicianKitWidget.SetActive(true);
+         
+        else 
+            MagicianKitWidget.SetActive(false);  
+    }
+
+    void OnEnable()
+    {
+        HealthBarWidth = InstantHealthBar.sizeDelta.x;
+        HudEffectsIcons = new Dictionary<int, Image> { {0, EffectIcon1}, {1, EffectIcon2}, {2, EffectIcon3}, {3, EffectIcon4}, {4, EffectIcon5} };
+        HudEffects = new HudEffect?[] { null, null, null, null, null };
+    }
+
+    public void UpdateHealth(int NewHealth)
+    {
+        Health.text = NewHealth.ToString();
+
+        float NewPercent = Mathf.Clamp01(NewHealth / 200f);
+        float InstantTargetWidth = HealthBarWidth * NewPercent;
+
+        float CurrentInstantWidth = InstantHealthBar.sizeDelta.x;
+        float CurrentDelayedWidth = DelayedHealthBar.sizeDelta.x;
+
+        InstantHealthBar.sizeDelta = new Vector2(InstantTargetWidth, InstantHealthBar.sizeDelta.y);
+
+        bool IsDamage = InstantTargetWidth < CurrentInstantWidth;
+
+        if (!IsDamage)
+        {
+            if (ActiveHealthBarCoroutine != null)
+            {
+                StopCoroutine(ActiveHealthBarCoroutine);
+                ActiveHealthBarCoroutine = null;
+            }
+
+            DelayedHealthBar.sizeDelta = new Vector2(InstantTargetWidth, DelayedHealthBar.sizeDelta.y);
+
+            if (DelayedHealthBarImage != null) DelayedHealthBarImage.color = DelayedNormalColor;
+            return;
+        }
+
+        if (DelayedHealthBarImage != null) DelayedHealthBarImage.color = DelayedDamageColor;
+
+        if (ActiveHealthBarCoroutine != null) StopCoroutine(ActiveHealthBarCoroutine);
+        ActiveHealthBarCoroutine = StartCoroutine(AnimateDelayedHealthBarToTargetWidth(InstantTargetWidth, DelayedDurationSeconds));
+    }
+
+    public void UpdateAmmo(int newAmmo)
+    {
+        Ammo.text = newAmmo.ToString();
+        if (newAmmo == 0) {
+            Color Color = AmmoIcon.color;
+            Color.a = 50f / 255f;
+            AmmoIcon.color = Color;
+        }
+
+        else {
+            Color Color = AmmoIcon.color;
+            Color.a = 1f;
+            AmmoIcon.color = Color;
+        }      
+    }
+
+    public void StartTarotCooldown()
+    {
+        Color Color = TarotIcon.color;
+        Color.a = 50f / 255f;
+        TarotIcon.color = Color;
+    }
+
+    public void UpdateTarot(int Time)
+    {
+        TarotTime.text = Time.ToString();
+    }
+
+    public void EndTarotCooldown()
+    {
+        Color Color = TarotIcon.color;
+        Color.a = 1f;
+        TarotIcon.color = Color;
+
+        TarotTime.text = "";
+    }
+
+
+    public void StartDustCooldown()
+    {
+        Color Color = DustIcon.color;
+        Color.a = 50f / 255f;
+        DustIcon.color = Color;
+    }
+
+    public void UpdateDust(int Time)
+    {
+        DustTime.text = Time.ToString();
+    }
+
+    public void EndDustCooldown()
+    {
+        Color Color = DustIcon.color;
+        Color.a = 1f;
+        DustIcon.color = Color;
+
+        DustTime.text = "";
+    }
+
+    public void StartCloakCooldown()
+    {
+        Color Color = CloakIcon.color;
+        Color.a = 50f / 255f;
+        CloakIcon.color = Color;
+    }
+
+    public void UpdateCloak(int Time)
+    {
+        CloakTime.text = Time.ToString();
+    }
+
+    public void EndCloakCooldown()
+    {
+        Color Color = CloakIcon.color;
+        Color.a = 1f;
+        CloakIcon.color = Color;
+
+        CloakTime.text = "";
+    }
+
+    public void StartHypnosisCooldown()
+    {
+        Color Color = HypnosisIcon.color;
+        Color.a = 50f / 255f;
+        HypnosisIcon.color = Color;
+    }
+
+    public void UpdateHypnosis(int Time)
+    {
+        HypnosisTime.text = Time.ToString();
+    }
+
+    public void EndHypnosisCooldown()
+    {
+        Color Color = HypnosisIcon.color;
+        Color.a = 1f;
+        HypnosisIcon.color = Color;
+
+        HypnosisTime.text = "";
+    }
+
+    public void HandleEffectAsTarget(PlayerEffect Effect)
+    {
+        if (Effect.EffectType == EffectType.Damage) {
+           MatchManager.Instance.AudioManager.PlayTakeDamageSound(true); 
+        }
+
+        else if (Effect.EffectType == EffectType.Dust) {
+            AddEffectToHud(Effect);
+            SetDustCloudActive(true);
+            AudioListener.volume = 0f;
+        }
+        
+        else if (Effect.EffectType == EffectType.Stunned) {
+            MatchManager.Instance.AudioManager.PlayStunnedSound(true); 
+        }
+
+        else if (Effect.EffectType == EffectType.Tarot) {
+            AddEffectToHud(Effect);
+            MatchManager.Instance.AudioManager.PlayTarotReceiveSound(true); 
+        }
+        
+        else {
+            AddEffectToHud(Effect);
+        }
+    }
+
+    public void HandleEffectAsSender(PlayerEffect Effect)
+    {
+        if (Effect.EffectType == EffectType.Damage) {
+
+            switch (Effect.EffectInfo.DamageInformation!.DamageType) {
+                case DamageType.Head:
+                    MatchManager.Instance.AudioManager.PlayHeadshotSound(true); // Only Owner Has Magician HUD Active To Begin With
+                    break;
+                
+                default: 
+                    MatchManager.Instance.AudioManager.PlayBodyshotSound(true);
+                    break;
+            }
+
+            CrosshairController.ShowHitMarker();
+        }
+    }
+
+    public void HandleEffectRemoveAsTarget(PlayerEffect Effect)
+    {
+        if (Effect.EffectType == EffectType.Damage) { }
+        
+        else if (Effect.EffectType == EffectType.Dust) {
+           RemoveEffectFromHud(Effect);
+           SetDustCloudActive(false);
+           AudioListener.volume = 1f;
+        }
+
+        else if (Effect.EffectType == EffectType.Stunned) {
+            // Remove "You Are Stunned" Effect Stuff
+        }
+
+        else {
+            RemoveEffectFromHud(Effect);
+        }
+    }
+
+    public void AddEffectToHud(PlayerEffect Effect)
+    {
+        for (int Index = 0; Index < HudEffects.Length; Index++)
+            if (HudEffects[Index]?.type == Effect.EffectType)
+            {
+                StopFlash(Index);
+                HudEffects[Index]!.id = Effect.Id;
+                return;
+            }
+
+        for (int Index = 0; Index < HudEffects.Length; Index++)
+            if (HudEffects[Index] == null)
+            {
+                HudEffects[Index] = new HudEffect { type = Effect.EffectType, id = Effect.Id};
+                switch (Effect.EffectType)
+                {
+                    case EffectType.Cloak:
+                        HudEffectsIcons[Index].sprite = CloakEffectIcon;
+                        break;
+
+                    case EffectType.Dust:
+                        HudEffectsIcons[Index].sprite = DustEffectIcon;
+                        break;
+
+                    case EffectType.Invincible:
+                        HudEffectsIcons[Index].sprite = InvincibleEffectIcon;
+                        break;
+                    
+                    case EffectType.Speed:
+                        HudEffectsIcons[Index].sprite = SpeedEffectIcon;
+                        break;
+                    
+                    case EffectType.Hypnosis:
+                        HudEffectsIcons[Index].sprite = HypnosisEffectIcon;
+                        break;
+                    
+                    case EffectType.Tarot:
+                        HudEffectsIcons[Index].sprite = TarotEffectIcon;
+                        break;
+
+                    default: 
+                        break;
+                }
+
+                Color color = HudEffectsIcons[Index].color;
+                color.a = 1f;
+                HudEffectsIcons[Index].color = color;
+                return;
+            }
+    }
+
+    public void TryHudIconFlash(PlayerEffect Effect)
+    {
+        for (int Index = 0; Index < HudEffects.Length; Index++)
+            if (HudEffects[Index]?.type == Effect.EffectType && HudEffects[Index]?.id == Effect.Id)
+            {
+                if (FlashCoroutines[Index] != null) return;
+                FlashCoroutines[Index] = StartCoroutine(FlashHudIcon(Index));
+                return;
+            }
+    }
+
+    public void RemoveEffectFromHud(PlayerEffect Effect)
+    {
+        for (int Index = 0; Index < HudEffects.Length; Index++)
+            if (HudEffects[Index]?.type == Effect.EffectType && HudEffects[Index]?.id == Effect.Id)
+            {
+                StopFlash(Index);
+                HudEffects[Index] = null;
+                HudEffectsIcons[Index].sprite = NoneEffectIcon;
+                Color color = HudEffectsIcons[Index].color;
+                color.a = 0f;
+                HudEffectsIcons[Index].color = color;
+                return;
+            }
+    }
+
+    private IEnumerator FlashHudIcon(int Index)
+    {
+        float FlashStepSeconds = 0.25f;
+        float MinAlpha = 0.25f;
+
+        while (true)
+        {
+            if (HudEffects[Index] == null || HudEffectsIcons[Index] == null) break;
+
+            var Icon = HudEffectsIcons[Index];
+            var ColorValue = Icon.color;
+            ColorValue.a = MinAlpha;
+            Icon.color = ColorValue;
+            yield return new WaitForSeconds(FlashStepSeconds);
+
+            if (HudEffects[Index] == null || HudEffectsIcons[Index] == null) break;
+
+            Icon = HudEffectsIcons[Index];
+            ColorValue = Icon.color;
+            ColorValue.a = 1f;
+            Icon.color = ColorValue;
+            yield return new WaitForSeconds(FlashStepSeconds);
+        }
+
+        FlashCoroutines[Index] = null;
+    }
+
+    private void StopFlash(int Index)
+    {
+        if (FlashCoroutines[Index] == null) return;
+        StopCoroutine(FlashCoroutines[Index]);
+        FlashCoroutines[Index] = null;
+
+        if (HudEffectsIcons[Index] != null)
+        {
+            var ColorValue = HudEffectsIcons[Index].color;
+            ColorValue.a = 1f;
+            HudEffectsIcons[Index].color = ColorValue;
+        }
+    }
+
+    IEnumerator AnimateDelayedHealthBarToTargetWidth(float TargetWidth, float DurationSeconds)
+    {
+        float StartWidth = DelayedHealthBar.sizeDelta.x;
+        float ElapsedSeconds = 0f;
+
+        while (ElapsedSeconds < DurationSeconds)
+        {
+            ElapsedSeconds += Time.deltaTime;
+            float Time01 = Mathf.Clamp01(ElapsedSeconds / DurationSeconds);
+
+            float NewWidth = Mathf.Lerp(StartWidth, TargetWidth, Time01);
+            DelayedHealthBar.sizeDelta = new Vector2(NewWidth, DelayedHealthBar.sizeDelta.y);
+
+            yield return null;
+        }
+
+        DelayedHealthBar.sizeDelta = new Vector2(TargetWidth, DelayedHealthBar.sizeDelta.y);
+
+        if (DelayedHealthBarImage != null) DelayedHealthBarImage.color = DelayedNormalColor;
+
+        ActiveHealthBarCoroutine = null;
+    }
+
+    public void SetDustCloudActive(bool IsActive)
+    {
+        if (DustCloud == null) return;
+
+        if (ActiveDustCloudCoroutine != null)
+        {
+            StopCoroutine(ActiveDustCloudCoroutine);
+            ActiveDustCloudCoroutine = null;
+        }
+
+        float TargetAlpha01 = IsActive ? 1f : 0f;
+        ActiveDustCloudCoroutine = StartCoroutine(AnimateDustCloudAlpha(TargetAlpha01, DustCloudFadeSeconds));
+    }
+
+    IEnumerator AnimateDustCloudAlpha(float TargetAlpha01, float DurationSeconds)
+    {
+        if (DustCloud == null) yield break;
+
+        Color CurrentColor = DustCloud.color;
+        float StartAlpha01 = CurrentColor.a;
+
+        float ElapsedSeconds = 0f;
+
+        while (ElapsedSeconds < DurationSeconds)
+        {
+            ElapsedSeconds += Time.deltaTime;
+            float Time01 = Mathf.Clamp01(ElapsedSeconds / DurationSeconds);
+
+            float NewAlpha01 = Mathf.Lerp(StartAlpha01, TargetAlpha01, Time01);
+            DustCloud.color = new Color(CurrentColor.r, CurrentColor.g, CurrentColor.b, NewAlpha01);
+
+            yield return null;
+        }
+
+        DustCloud.color = new Color(CurrentColor.r, CurrentColor.g, CurrentColor.b, TargetAlpha01);
+        ActiveDustCloudCoroutine = null;
+    }
+
+    
+
+    public class HudEffect
+    {
+        public ulong id;
+        public EffectType type;
+    }
+
+}

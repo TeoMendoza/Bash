@@ -1,3 +1,4 @@
+use std::sync::OnceLock;
 use crate::*;
 
 pub static CROUCH_LEG_VERTICES: &[DbVector3] = &[
@@ -85,28 +86,18 @@ pub static CROUCH_HEAD_VERTICES: &[DbVector3] = &[
 pub static CROUCH_HEAD_TRIANGLE_INDICES_LOCAL: &[i32] = &[5, 8, 16, 4, 12, 7, 6, 14, 9, 8, 5, 11, 13, 12, 11, 12, 9, 11, 12, 4, 0, 5, 16, 2, 4, 7, 2, 11, 5, 2, 16, 8, 15, 8, 11, 15, 11, 9, 15, 9, 14, 15, 14, 0, 15, 0, 16, 15, 12, 13, 10, 13, 11, 10, 11, 2, 10, 2, 7, 10, 7, 12, 10, 14, 6, 3, 6, 9, 3, 9, 12, 3, 12, 0, 3, 0, 14, 3, 16, 0, 1, 0, 4, 1, 4, 2, 1, 2, 16, 1];
 
 pub fn MagicianCrouchCollider() -> ComplexCollider {
-    let crouch_leg_hull: ConvexHullCollider = ConvexHullCollider {
-        vertices_local: CROUCH_LEG_VERTICES.to_vec(),
-        triangle_indices_local: CROUCH_LEG_TRIANGLE_INDICES_LOCAL.to_vec(),
-        margin: 0.0,
-        collider_type: ConvexHullColliderType::Leg
-    };
-    let crouch_body_hull: ConvexHullCollider = ConvexHullCollider {
-        vertices_local: CROUCH_BODY_VERTICES.to_vec(),
-        triangle_indices_local: CROUCH_BODY_TRIANGLE_INDICES_LOCAL.to_vec(),
-        margin: 0.0,
-        collider_type: ConvexHullColliderType::Body
-    };
-    let crouch_head_hull: ConvexHullCollider = ConvexHullCollider {
-        vertices_local: CROUCH_HEAD_VERTICES.to_vec(),
-        triangle_indices_local: CROUCH_HEAD_TRIANGLE_INDICES_LOCAL.to_vec(),
-        margin: 0.0,
-        collider_type: ConvexHullColliderType::Head
-    };
-    let crouch_convex_hulls: Vec<ConvexHullCollider> = vec![
-        crouch_leg_hull,
-        crouch_body_hull,
-        crouch_head_hull
-    ];
-    ComplexCollider { convex_hulls: crouch_convex_hulls, center_point: DbVector3 { x: -0.04, y: 0.84, z: 0.02 } }
+    static COLLIDER: OnceLock<ComplexCollider> = OnceLock::new();
+
+    COLLIDER.get_or_init(|| {
+        let crouch_leg_hull: ConvexHullCollider = create_convex_hull_collider(CROUCH_LEG_VERTICES, CROUCH_LEG_TRIANGLE_INDICES_LOCAL, 0.0, ConvexHullColliderType::Leg);
+        let crouch_body_hull: ConvexHullCollider = create_convex_hull_collider(CROUCH_BODY_VERTICES, CROUCH_BODY_TRIANGLE_INDICES_LOCAL, 0.0, ConvexHullColliderType::Body);
+        let crouch_head_hull: ConvexHullCollider = create_convex_hull_collider(CROUCH_HEAD_VERTICES, CROUCH_HEAD_TRIANGLE_INDICES_LOCAL, 0.0, ConvexHullColliderType::Head);
+        let crouch_convex_hulls: Vec<ConvexHullCollider> = vec![
+            crouch_leg_hull,
+            crouch_body_hull,
+            crouch_head_hull
+        ];
+
+        create_complex_collider(crouch_convex_hulls, DbVector3 { x: -0.04, y: 0.84, z: 0.02 })
+    }).clone()
 }

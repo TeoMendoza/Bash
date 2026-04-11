@@ -17,14 +17,18 @@ namespace SpacetimeDB.Types
         public System.Collections.Generic.List<ConvexHullCollider> ConvexHulls;
         [DataMember(Name = "center_point")]
         public DbVector3 CenterPoint;
+        [DataMember(Name = "bounding_radius")]
+        public float BoundingRadius;
 
         public ComplexCollider(
             System.Collections.Generic.List<ConvexHullCollider> ConvexHulls,
-            DbVector3 CenterPoint
+            DbVector3 CenterPoint,
+            float BoundingRadius
         )
         {
             this.ConvexHulls = ConvexHulls;
             this.CenterPoint = CenterPoint;
+            this.BoundingRadius = BoundingRadius;
         }
 
         public ComplexCollider()

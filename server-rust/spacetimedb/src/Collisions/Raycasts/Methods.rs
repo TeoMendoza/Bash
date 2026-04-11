@@ -11,11 +11,13 @@ pub fn raycast_match(ctx: &ReducerContext, ray_origin: DbVector3, ray_direction:
     let mut best_hit_name: String = "".to_string();
 
     let ray_direction_unit: DbVector3 = normalize_small_vector(ray_direction, DbVector3 { x: 0.0, y: 0.0, z: 1.0 });
+    let ray_padding: f32 = 0.05;
 
     let magician_option = ctx.db.magician().identity().find(ctx.sender());
     if let Some(magician) = magician_option {
         for other in ctx.db.magician().game_id().filter(magician.game_id) {
             if other.identity == ctx.sender() { continue; }
+            if segment_intersects_collider_bounding_sphere(ray_origin, ray_direction_unit, best_distance, &other.collider, other.position, to_radians(other.rotation.yaw), ray_padding) == false { continue; }
 
             let hit: Raycast = raycast_complex_collider(ray_origin, ray_direction_unit, best_distance, &other.collider, other.position, to_radians(other.rotation.yaw), RaycastHitType::Magician, other.id);
             if hit.hit && hit.hit_distance < best_distance {
@@ -30,6 +32,8 @@ pub fn raycast_match(ctx: &ReducerContext, ray_origin: DbVector3, ray_direction:
         }
 
         for map_piece in ctx.db.map().iter() {
+            if segment_intersects_collider_bounding_sphere(ray_origin, ray_direction_unit, best_distance, &map_piece.collider, DbVector3 { x: 0.0, y: 0.0, z: 0.0 }, 0.0, ray_padding) == false { continue; }
+
             let hit: Raycast = raycast_complex_collider_world_space(ray_origin, ray_direction_unit, best_distance, &map_piece.collider, RaycastHitType::MapPiece, map_piece.id);
             if hit.hit && hit.hit_distance < best_distance {
                 has_hit = true;
@@ -46,6 +50,42 @@ pub fn raycast_match(ctx: &ReducerContext, ray_origin: DbVector3, ray_direction:
     Raycast { hit: has_hit, hit_distance: best_distance, hit_point: best_point, hit_type: best_type, hit_entity_id: best_entity_id, collider_type: best_collider_type, hit_name: best_hit_name }
 }
 
+pub fn raycast_map_only_match_for_pieces(map_pieces: &[Map], ray_origin: DbVector3, ray_direction: DbVector3, max_distance: f32) -> Raycast {
+    let mut has_hit: bool = false;
+    let mut best_distance: f32 = max_distance;
+    let mut best_point: DbVector3 = DbVector3 { x: 0.0, y: 0.0, z: 0.0 };
+    let mut best_entity_id: u64 = 0;
+    let ray_direction_unit: DbVector3 = normalize_small_vector(ray_direction, DbVector3 { x: 0.0, y: 0.0, z: 1.0 });
+    let ray_padding: f32 = 0.05;
+
+    for map_piece in map_pieces.iter() {
+        if segment_intersects_collider_bounding_sphere(ray_origin, ray_direction_unit, best_distance, &map_piece.collider, DbVector3 { x: 0.0, y: 0.0, z: 0.0 }, 0.0, ray_padding) == false { continue; }
+
+        let hit = raycast_complex_collider_world_space(ray_origin, ray_direction_unit, best_distance, &map_piece.collider, RaycastHitType::MapPiece, map_piece.id);
+        if hit.hit && hit.hit_distance < best_distance {
+            has_hit = true;
+            best_distance = hit.hit_distance;
+            best_point = hit.hit_point;
+            best_entity_id = hit.hit_entity_id;
+        }
+    }
+
+    Raycast {
+        hit: has_hit,
+        hit_distance: best_distance,
+        hit_point: best_point,
+        hit_type: if has_hit { RaycastHitType::MapPiece } else { RaycastHitType::None },
+        hit_entity_id: best_entity_id,
+        collider_type: ConvexHullColliderType::None,
+        hit_name: "".to_string()
+    }
+}
+
+pub fn raycast_map_only_match(ctx: &ReducerContext, ray_origin: DbVector3, ray_direction: DbVector3, max_distance: f32) -> Raycast {
+    let map_pieces: Vec<Map> = ctx.db.map().iter().collect();
+    raycast_map_only_match_for_pieces(&map_pieces, ray_origin, ray_direction, max_distance)
+}
+
 pub fn raycast_cone_match(ctx: &ReducerContext, ray_origin: DbVector3, ray_forward: DbVector3, max_distance: f32, cone_half_angle_degrees: f32) -> Vec<Raycast> { // Returns all targets with cone of max distance - Target must be facing player (enables flash dodges)
     let forward_unit = normalize_small_vector(ray_forward, DbVector3 { x: 0.0, y: 0.0, z: 1.0 });
     let cone_half_angle_radians = to_radians(cone_half_angle_degrees);
@@ -56,6 +96,7 @@ pub fn raycast_cone_match(ctx: &ReducerContext, ray_origin: DbVector3, ray_forwa
 
     let magician_option = ctx.db.magician().identity().find(ctx.sender());
     if let Some(magician) = magician_option { 
+        let map_pieces: Vec<Map> = ctx.db.map().iter().collect();
         for other in ctx.db.magician().game_id().filter(magician.game_id) {
             if other.identity == ctx.sender() { continue; }
 
@@ -68,6 +109,9 @@ pub fn raycast_cone_match(ctx: &ReducerContext, ray_origin: DbVector3, ray_forwa
             if center_distance > max_distance { continue; }
 
             if center_distance <= auto_hit_distance { // Sensitive zone where raycast detection is wonky due to origin being outside of player hitbox
+                let map_blocker = raycast_map_only_match_for_pieces(&map_pieces, ray_origin, center_vector_to_other, center_distance);
+                if map_blocker.hit { continue; }
+
                 hits.push(Raycast {
                     hit: true,
                     hit_distance: center_distance,
@@ -87,6 +131,9 @@ pub fn raycast_cone_match(ctx: &ReducerContext, ray_origin: DbVector3, ray_forwa
             let collider_hit = raycast_complex_collider(ray_origin, center_unit_to_other, max_distance, &other.collider, other.position, other_yaw_radians, RaycastHitType::Magician, other.id);
             if collider_hit.hit == false { continue; }
 
+            let map_blocker = raycast_map_only_match_for_pieces(&map_pieces, ray_origin, center_unit_to_other, collider_hit.hit_distance);
+            if map_blocker.hit && map_blocker.hit_distance + 1e-4 < collider_hit.hit_distance { continue; }
+
             hits.push(collider_hit);
         }
     }
@@ -100,6 +147,10 @@ pub fn raycast_complex_collider(ray_origin: DbVector3, ray_direction_unit: DbVec
     let mut best_distance: f32 = max_distance;
     let mut best_point: DbVector3 = DbVector3 { x: 0.0, y: 0.0, z: 0.0 };
     let mut best_collider_type: ConvexHullColliderType = ConvexHullColliderType::None;
+
+    if segment_intersects_collider_bounding_sphere(ray_origin, ray_direction_unit, max_distance, collider, collider_world_position, collider_yaw_radians, 0.05) == false {
+        return Raycast { hit: false, hit_distance: best_distance, hit_point: best_point, hit_type: RaycastHitType::None, hit_entity_id: hit_entity_id, collider_type: ConvexHullColliderType::None, hit_name: "".to_string() };
+    }
 
     let local_origin: DbVector3 = rotate_around_y_axis(sub(ray_origin, collider_world_position), -collider_yaw_radians);
     let local_direction: DbVector3 = rotate_around_y_axis(ray_direction_unit, -collider_yaw_radians);
@@ -125,6 +176,10 @@ pub fn raycast_complex_collider_world_space(ray_origin: DbVector3, ray_direction
     let mut best_point: DbVector3 = DbVector3 { x: 0.0, y: 0.0, z: 0.0 };
     let mut best_collider_type: ConvexHullColliderType = ConvexHullColliderType::None;
 
+    if segment_intersects_collider_bounding_sphere(ray_origin, ray_direction_unit, max_distance, collider, DbVector3 { x: 0.0, y: 0.0, z: 0.0 }, 0.0, 0.05) == false {
+        return Raycast { hit: false, hit_distance: best_distance, hit_point: best_point, hit_type: RaycastHitType::None, hit_entity_id: hit_entity_id, collider_type: ConvexHullColliderType::None, hit_name: "".to_string() };
+    }
+
     for hull in collider.convex_hulls.iter() {
         let mut hit_distance: f32 = best_distance;
         if raycast_convex_hull_triangles(ray_origin, ray_direction_unit, best_distance, hull, &mut hit_distance) {
@@ -141,6 +196,11 @@ pub fn raycast_complex_collider_world_space(ray_origin: DbVector3, ray_direction
 pub fn raycast_convex_hull_triangles(ray_origin_local: DbVector3, ray_direction_local: DbVector3, max_distance: f32, hull: &ConvexHullCollider, hit_distance_out: &mut f32) -> bool {
     *hit_distance_out = max_distance;
     let mut has_hit: bool = false;
+
+    let (aabb_min, aabb_max) = compute_hull_local_aabb(hull);
+    if ray_intersects_aabb(ray_origin_local, ray_direction_local, max_distance, aabb_min, aabb_max) == false {
+        return false;
+    }
 
     let vertices: &Vec<DbVector3> = &hull.vertices_local;
     let triangles: &Vec<i32> = &hull.triangle_indices_local;

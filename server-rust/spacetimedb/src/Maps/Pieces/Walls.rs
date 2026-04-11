@@ -60,53 +60,21 @@ pub static WEST_WALL_VERTICES: &[DbVector3] = &[
 ];
 
 pub fn north_wall_collider() -> ComplexCollider {
-    let wall_convex_hull: ConvexHullCollider = ConvexHullCollider {
-        vertices_local: NORTH_WALL_VERTICES.to_vec(),
-        triangle_indices_local: BOX_TRIANGLE_INDICES_LOCAL.to_vec(),
-        margin: 0.0,
-        collider_type: ConvexHullColliderType::None,
-    };
-    ComplexCollider {
-        convex_hulls: vec![wall_convex_hull],
-        center_point: DbVector3 { x: 0.0, y: 12.5, z: 39.0 },
-    }
+    let wall_convex_hull: ConvexHullCollider = create_convex_hull_collider(NORTH_WALL_VERTICES, BOX_TRIANGLE_INDICES_LOCAL, 0.0, ConvexHullColliderType::None);
+    create_complex_collider(vec![wall_convex_hull], DbVector3 { x: 0.0, y: 12.5, z: 39.0 })
 }
 
 pub fn south_wall_collider() -> ComplexCollider {
-    let wall_convex_hull: ConvexHullCollider = ConvexHullCollider {
-        vertices_local: SOUTH_WALL_VERTICES.to_vec(),
-        triangle_indices_local: BOX_TRIANGLE_INDICES_LOCAL.to_vec(),
-        margin: 0.0,
-        collider_type: ConvexHullColliderType::None,
-    };
-    ComplexCollider {
-        convex_hulls: vec![wall_convex_hull],
-        center_point: DbVector3 { x: 0.0, y: 12.5, z: -39.0 },
-    }
+    let wall_convex_hull: ConvexHullCollider = create_convex_hull_collider(SOUTH_WALL_VERTICES, BOX_TRIANGLE_INDICES_LOCAL, 0.0, ConvexHullColliderType::None);
+    create_complex_collider(vec![wall_convex_hull], DbVector3 { x: 0.0, y: 12.5, z: -39.0 })
 }
 
 pub fn east_wall_collider() -> ComplexCollider {
-    let wall_convex_hull: ConvexHullCollider = ConvexHullCollider {
-        vertices_local: EAST_WALL_VERTICES.to_vec(),
-        triangle_indices_local: BOX_TRIANGLE_INDICES_LOCAL.to_vec(),
-        margin: 0.0,
-        collider_type: ConvexHullColliderType::None,
-    };
-    ComplexCollider {
-        convex_hulls: vec![wall_convex_hull],
-        center_point: DbVector3 { x: 39.0, y: 12.5, z: 0.0 },
-    }
+    let wall_convex_hull: ConvexHullCollider = create_convex_hull_collider(EAST_WALL_VERTICES, BOX_TRIANGLE_INDICES_LOCAL, 0.0, ConvexHullColliderType::None);
+    create_complex_collider(vec![wall_convex_hull], DbVector3 { x: 39.0, y: 12.5, z: 0.0 })
 }
 
 pub fn west_wall_collider() -> ComplexCollider {
-    let wall_convex_hull: ConvexHullCollider = ConvexHullCollider {
-        vertices_local: WEST_WALL_VERTICES.to_vec(),
-        triangle_indices_local: BOX_TRIANGLE_INDICES_LOCAL.to_vec(),
-        margin: 0.0,
-        collider_type: ConvexHullColliderType::None,
-    };
-    ComplexCollider {
-        convex_hulls: vec![wall_convex_hull],
-        center_point: DbVector3 { x: -39.0, y: 12.5, z: 0.0 },
-    }
+    let wall_convex_hull: ConvexHullCollider = create_convex_hull_collider(WEST_WALL_VERTICES, BOX_TRIANGLE_INDICES_LOCAL, 0.0, ConvexHullColliderType::None);
+    create_complex_collider(vec![wall_convex_hull], DbVector3 { x: -39.0, y: 12.5, z: 0.0 })
 }

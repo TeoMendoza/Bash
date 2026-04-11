@@ -21,24 +21,34 @@ namespace SpacetimeDB.Types
         public float Margin;
         [DataMember(Name = "collider_type")]
         public ConvexHullColliderType ColliderType;
+        [DataMember(Name = "aabb_min_local")]
+        public DbVector3 AabbMinLocal;
+        [DataMember(Name = "aabb_max_local")]
+        public DbVector3 AabbMaxLocal;
 
         public ConvexHullCollider(
             System.Collections.Generic.List<DbVector3> VerticesLocal,
             System.Collections.Generic.List<int> TriangleIndicesLocal,
             float Margin,
-            ConvexHullColliderType ColliderType
+            ConvexHullColliderType ColliderType,
+            DbVector3 AabbMinLocal,
+            DbVector3 AabbMaxLocal
         )
         {
             this.VerticesLocal = VerticesLocal;
             this.TriangleIndicesLocal = TriangleIndicesLocal;
             this.Margin = Margin;
             this.ColliderType = ColliderType;
+            this.AabbMinLocal = AabbMinLocal;
+            this.AabbMaxLocal = AabbMaxLocal;
         }
 
         public ConvexHullCollider()
         {
             this.VerticesLocal = new();
             this.TriangleIndicesLocal = new();
+            this.AabbMinLocal = new();
+            this.AabbMaxLocal = new();
         }
     }
 }

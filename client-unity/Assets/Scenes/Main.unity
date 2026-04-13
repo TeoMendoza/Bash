@@ -200,6 +200,7 @@ MonoBehaviour:
   - {fileID: 5578895785347280920, guid: 36353846f31b34b02a0281a134b8732f, type: 3}
   - {fileID: -574735617636778617, guid: 026ec1673620041148a7fc82149eab1a, type: 3}
   - {fileID: 3736466302606282352, guid: eb3ef7c6c972f4de09d9588dc736c9bd, type: 3}
+  - {fileID: 759991390475006755, guid: 7c1634ea6f47f416aaada105eb8773d4, type: 3}
   - {fileID: -9208161060770682643, guid: 0bdc8dd383cf04bf2b90af7e3c35fd3f, type: 3}
   - {fileID: 6483241183198448827, guid: 898eb94cc7f664df38770617b2831e8d, type: 3}
   - {fileID: 7481042699991603905, guid: a2385b172f9014bcb9e54dc1e62b2d8d, type: 3}
@@ -208,7 +209,6 @@ MonoBehaviour:
   - {fileID: 3073821233409164374, guid: 15594ad7ddd1f4471aa7cb1f4c5ba17e, type: 3}
   - {fileID: 608417666563515079, guid: da1decf39cff6495aab571fa39e00ca0, type: 3}
   - {fileID: 7437137628420893806, guid: 6845c850eca7b4b3b895455107280f05, type: 3}
-  - {fileID: 9169997490240012242, guid: 3471535f37648420d98e270a796b988f, type: 3}
   ClientMagician: {fileID: 0}
   MapContainer: {fileID: 2115180072}
 --- !u!4 &156625267

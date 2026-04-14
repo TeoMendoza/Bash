@@ -1462,7 +1462,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "Hypnosis\t  20"
+  m_text: "Hypnosis\t  45"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 2f0d7d08590464f6eacbe348c3e136f1, type: 2}
   m_sharedMaterial: {fileID: 6818679603244455661, guid: 2f0d7d08590464f6eacbe348c3e136f1, type: 2}
@@ -1787,7 +1787,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "Dust\t  \t  10"
+  m_text: "Dust\t  \t  15"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 2f0d7d08590464f6eacbe348c3e136f1, type: 2}
   m_sharedMaterial: {fileID: 6818679603244455661, guid: 2f0d7d08590464f6eacbe348c3e136f1, type: 2}
@@ -5973,7 +5973,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "Tarot \t  20"
+  m_text: "Tarot \t  25"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 2f0d7d08590464f6eacbe348c3e136f1, type: 2}
   m_sharedMaterial: {fileID: 6818679603244455661, guid: 2f0d7d08590464f6eacbe348c3e136f1, type: 2}

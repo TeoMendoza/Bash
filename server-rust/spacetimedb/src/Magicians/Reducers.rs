@@ -29,19 +29,19 @@ pub fn handle_movement_request_magician(ctx: &ReducerContext, request: MovementR
         let mut local_z: f32 = 0.0;
 
         if request.move_forward && !request.move_backward { // Opposite direction requests cancel
-            local_z = 2.5;
+            local_z = 3.75; // 2.5
         } 
         
         else if request.move_backward && !request.move_forward {
-            local_z = -2.5;
+            local_z = -3.75;
         }
 
         if request.move_right && !request.move_left {
-            local_x = 2.0;
+            local_x = 3.0; // 2.0
         } 
         
         else if request.move_left && !request.move_right {
-            local_x = -2.0;
+            local_x = -3.0;
         }
 
         let forward_sprinting =
@@ -61,7 +61,7 @@ pub fn handle_movement_request_magician(ctx: &ReducerContext, request: MovementR
             }
 
             else {
-                local_z *= 2.5;
+                local_z *=  2.5; // 2.5 
             }
         }
 

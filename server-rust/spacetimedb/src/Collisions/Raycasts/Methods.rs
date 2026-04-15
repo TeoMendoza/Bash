@@ -86,6 +86,66 @@ pub fn raycast_map_only_match(ctx: &ReducerContext, ray_origin: DbVector3, ray_d
     raycast_map_only_match_for_pieces(&map_pieces, ray_origin, ray_direction, max_distance)
 }
 
+pub fn raycast_beam_match(ctx: &ReducerContext, ray_origin: DbVector3, ray_direction: DbVector3, max_distance: f32, beam_half_angle_degrees: f32) -> Raycast { // Samples several individual raycasts to emulate a small beam - Uses offset origins so close range feels less strict
+    let ray_direction_unit: DbVector3 = normalize_small_vector(ray_direction, DbVector3 { x: 0.0, y: 0.0, z: 1.0 });
+    let beam_right: DbVector3 = any_perpendicular_unit(ray_direction_unit);
+    let beam_up: DbVector3 = normalize_small_vector(cross(beam_right, ray_direction_unit), DbVector3 { x: 0.0, y: 1.0, z: 0.0 });
+
+    let beam_reference_distance: f32 = 6.0;
+    let min_beam_radius: f32 = 0.08;
+    let beam_radius: f32 = (to_radians(beam_half_angle_degrees).tan() * beam_reference_distance).max(min_beam_radius);
+    let diagonal: f32 = 0.70710677;
+
+    let sample_offsets: [(f32, f32); 9] = [
+        (0.0, 0.0),
+        (1.0, 0.0),
+        (-1.0, 0.0),
+        (0.0, 1.0),
+        (0.0, -1.0),
+        (diagonal, diagonal),
+        (diagonal, -diagonal),
+        (-diagonal, diagonal),
+        (-diagonal, -diagonal)
+    ];
+
+    let beam_end_point: DbVector3 = add(ray_origin, mul(ray_direction_unit, max_distance));
+    let mut best_magician_hit: Option<Raycast> = None;
+    let mut best_other_hit: Option<Raycast> = None;
+    let mut best_magician_distance: f32 = max_distance;
+    let mut best_other_distance: f32 = max_distance;
+
+    for (sample_x, sample_y) in sample_offsets {
+        let sample_origin = add(ray_origin, add(mul(beam_right, sample_x * beam_radius), mul(beam_up, sample_y * beam_radius)));
+        let sample_direction = normalize_small_vector(sub(beam_end_point, sample_origin), ray_direction_unit);
+        let hit = raycast_match(ctx, sample_origin, sample_direction, max_distance);
+        if hit.hit == false { continue; }
+
+        let center_distance = magnitude(sub(hit.hit_point, ray_origin));
+
+        if hit.hit_type == RaycastHitType::Magician {
+            if best_magician_hit.is_none() || center_distance < best_magician_distance {
+                best_magician_distance = center_distance;
+                best_magician_hit = Some(hit);
+            }
+        }
+
+        else if best_other_hit.is_none() || center_distance < best_other_distance {
+            best_other_distance = center_distance;
+            best_other_hit = Some(hit);
+        }
+    }
+
+    if let Some(hit) = best_magician_hit {
+        return hit;
+    }
+
+    if let Some(hit) = best_other_hit {
+        return hit;
+    }
+
+    Raycast { hit: false, hit_distance: max_distance, hit_point: DbVector3 { x: 0.0, y: 0.0, z: 0.0 }, hit_type: RaycastHitType::None, hit_entity_id: 0, collider_type: ConvexHullColliderType::None, hit_name: "".to_string() }
+}
+
 pub fn raycast_cone_match(ctx: &ReducerContext, ray_origin: DbVector3, ray_forward: DbVector3, max_distance: f32, cone_half_angle_degrees: f32) -> Vec<Raycast> { // Returns all targets with cone of max distance - Target must be facing player (enables flash dodges)
     let forward_unit = normalize_small_vector(ray_forward, DbVector3 { x: 0.0, y: 0.0, z: 1.0 });
     let cone_half_angle_radians = to_radians(cone_half_angle_degrees);

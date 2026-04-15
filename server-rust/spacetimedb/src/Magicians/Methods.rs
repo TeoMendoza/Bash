@@ -3,6 +3,9 @@ use spacetimedb::{ReducerContext};
 use glam::Quat;
 use crate::*;
 
+const ATTACK_BEAM_HALF_ANGLE_DEGREES: f32 = 0.75;
+const HYPNOSIS_BEAM_HALF_ANGLE_DEGREES: f32 = 1.0;
+
 pub fn adjust_grounded(_ctx: &ReducerContext, was_grounded: bool, move_velocity: &DbVector3, magician: &mut Magician) { // Adjusts kinematic state and permissions based on grounded
     let grounded_now: bool = magician.kinematic_information.grounded;
 
@@ -395,7 +398,7 @@ pub fn try_perform_attack(ctx: &ReducerContext, magician: &mut Magician, attack_
     let shot_delta = sub(aim_point, spawn_point);
     let shot_direction = normalize_small_vector(shot_delta, camera_forward);
 
-    let shot_hit = raycast_match(ctx, spawn_point, shot_direction, attack_information.max_distance); // Checks for a hit based on the rebuilt data (single target)
+    let shot_hit = raycast_beam_match(ctx, spawn_point, shot_direction, attack_information.max_distance, ATTACK_BEAM_HALF_ANGLE_DEGREES); // Checks for a hit based on the rebuilt data (multi ray beam)
     if shot_hit.hit && shot_hit.hit_type == RaycastHitType::Magician {
 
         damage_effect.target_name = shot_hit.hit_name;
@@ -479,7 +482,7 @@ pub fn try_hypnotise(ctx: &ReducerContext, magician: &mut Magician, camera_infor
     let shot_delta = sub(aim_point, spawn_point);
     let shot_direction = normalize_small_vector(shot_delta, camera_forward);
 
-    let raycast = raycast_match(ctx, spawn_point, shot_direction, camera_information.max_distance);
+    let raycast = raycast_beam_match(ctx, spawn_point, shot_direction, camera_information.max_distance, HYPNOSIS_BEAM_HALF_ANGLE_DEGREES);
 
     raycast
 }

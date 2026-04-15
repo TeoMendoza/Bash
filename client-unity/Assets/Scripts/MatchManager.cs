@@ -233,10 +233,14 @@ public class MatchManager : MonoBehaviour
     {
         foreach (Map MapPiece in Conn.Db.Map.Iter())
         {
-            uint MapPieceId = (uint)MapPiece.Id;
-            if (MapPieces.ContainsKey(MapPieceId))
-                continue;
+            if (MapPiece.Name == "Middle Ramp 2") {
+                Debug.Log($"MIDDLE RAMP 2 HELLO! Id {(uint)MapPiece.Id}");
+            }
 
+            uint MapPieceId = (uint)MapPiece.Id;
+            if (MapPieces.ContainsKey(MapPieceId))      
+                continue;
+            
             if (!TryFindMapPrefab(MapPiece.Name, out MapPiece MatchingPrefab))
                 continue;
 

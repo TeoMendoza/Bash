@@ -1,6 +1,10 @@
+use std::collections::HashMap;
 use spacetimedb::{ReducerContext};
 use glam::Quat;
 use crate::*;
+
+const ATTACK_BEAM_HALF_ANGLE_DEGREES: f32 = 0.75;
+const HYPNOSIS_BEAM_HALF_ANGLE_DEGREES: f32 = 1.0;
 
 pub fn adjust_grounded(_ctx: &ReducerContext, was_grounded: bool, move_velocity: &DbVector3, magician: &mut Magician) { // Adjusts kinematic state and permissions based on grounded
     let grounded_now: bool = magician.kinematic_information.grounded;
@@ -19,6 +23,59 @@ pub fn adjust_grounded(_ctx: &ReducerContext, was_grounded: bool, move_velocity:
         add_subscriber_to_permission(&mut magician.permissions, "CanJump", "Jump");
         add_subscriber_to_permission(&mut magician.permissions, "CanCrouch", "Jump");
     }
+}
+
+pub fn push_collision_candidate_if_missing(candidates: &mut Vec<CollisionEntry>, entry: CollisionEntry) {
+    if candidates.contains(&entry) == false {
+        candidates.push(entry);
+    }
+}
+
+pub fn get_map_piece_by_id<'a>(map_pieces: &'a [Map], map_piece_indices: &HashMap<u64, usize>, map_piece_id: u64) -> Option<&'a Map> {
+    if let Some(index) = map_piece_indices.get(&map_piece_id) {
+        return Some(&map_pieces[*index]);
+    }
+
+    None
+}
+
+pub fn build_collision_candidates(ctx: &ReducerContext, map_pieces: &[Map], magician: &Magician, sweep_time: f32) -> Vec<CollisionEntry> { // Supplements client collision entries with cheap server-side broadphase candidates
+    let mut candidates = magician.collision_entries.clone();
+    let position_a = magician.position;
+    let yaw_radians_a: f32 = to_radians(magician.rotation.yaw);
+    let movement_padding: f32 = magnitude(magician.requested_velocity) * sweep_time + 0.25;
+
+    for other in ctx.db.magician().game_id().filter(magician.game_id) {
+        if other.id == magician.id { continue; }
+
+        if broadphase_radius_overlap(&magician.collider, position_a, yaw_radians_a, &other.collider, other.position, to_radians(other.rotation.yaw), movement_padding) == false {
+            continue;
+        }
+
+        push_collision_candidate_if_missing(&mut candidates, CollisionEntry { entry_type: CollisionEntryType::Magician, id: other.id });
+    }
+
+    for map_piece in map_pieces.iter() {
+        if broadphase_radius_overlap(&magician.collider, position_a, yaw_radians_a, &map_piece.collider, DbVector3 { x: 0.0, y: 0.0, z: 0.0 }, 0.0, movement_padding) == false {
+            continue;
+        }
+
+        push_collision_candidate_if_missing(&mut candidates, CollisionEntry { entry_type: CollisionEntryType::Map, id: map_piece.id });
+    }
+
+    candidates
+}
+
+pub fn magician_collider_matches_kinematic_state(magician: &Magician) -> bool {
+    let expected_center =
+        if magician.kinematic_information.grounded {
+            if magician.kinematic_information.crouched { DbVector3 { x: -0.04, y: 0.84, z: 0.02 } }
+            else { DbVector3 { x: 0.0, y: 0.90, z: 0.03 } }
+        }
+        else if magician.kinematic_information.falling { DbVector3 { x: -0.05, y: 1.00, z: -0.03 } }
+        else { DbVector3 { x: -0.06, y: 1.30, z: -0.03 } };
+
+    distance_sq(magician.collider.center_point, expected_center) <= 1e-8
 }
 
 pub fn resolve_contacts(magician: &mut Magician, contacts: &Vec<CollisionContact>) { // Handles correcting velocity and position between player and it's contacts (objects it is colliding with)
@@ -102,7 +159,7 @@ pub fn resolve_contacts(magician: &mut Magician, contacts: &Vec<CollisionContact
     magician.kinematic_information.grounded = magician.kinematic_information.grounded || is_grounded_on_map;
 }
 
-pub fn try_build_contact_for_entry(ctx: &ReducerContext, character_local: &Magician, collision_entry: &CollisionEntry, contacts: &mut Vec<CollisionContact>) -> bool { // Returns whether target player is colliding with proposed collision entry - Computes properly oriented normal of collision if so
+pub fn try_build_contact_for_entry(ctx: &ReducerContext, map_pieces: &[Map], map_piece_indices: &HashMap<u64, usize>, character_local: &Magician, collision_entry: &CollisionEntry, contacts: &mut Vec<CollisionContact>) -> bool { // Returns whether target player is colliding with proposed collision entry - Computes properly oriented normal of collision if so
     let position_a = character_local.position;
     let yaw_radians_a: f32 = to_radians(character_local.rotation.yaw);
 
@@ -124,6 +181,11 @@ pub fn try_build_contact_for_entry(ctx: &ReducerContext, character_local: &Magic
         let collider_b: &Vec<ConvexHullCollider> = &other_magician.collider.convex_hulls;
         let position_b = other_magician.position;
         let yaw_radians_b: f32 = to_radians(other_magician.rotation.yaw);
+        let broadphase_padding: f32 = 0.05;
+
+        if broadphase_radius_overlap(&character_local.collider, position_a, yaw_radians_a, &other_magician.collider, position_b, yaw_radians_b, broadphase_padding) == false {
+            return false;
+        }
 
         if solve_gjk(collider_a, position_a, yaw_radians_a, collider_b, position_b, yaw_radians_b, &mut gjk_result, gjk_iterations) == false { 
             return false; 
@@ -131,7 +193,8 @@ pub fn try_build_contact_for_entry(ctx: &ReducerContext, character_local: &Magic
 
         let center_b_world = get_collider_center_world(&other_magician.collider, position_b, yaw_radians_b);
 
-        if epa_solve(&gjk_result, collider_a, position_a, yaw_radians_a, collider_b, position_b, yaw_radians_b, &mut epa_contact) {
+        let epa_converged = epa_solve(&gjk_result, collider_a, position_a, yaw_radians_a, collider_b, position_b, yaw_radians_b, &mut epa_contact);
+        if epa_converged || epa_contact.depth > 1e-4 {
             let contact_normal = compute_contact_normal(&ctx, epa_contact.normal, center_a_world, center_b_world);
             contacts.push(CollisionContact { normal: contact_normal, penetration_depth: epa_contact.depth, collision_type: CollisionEntryType::Magician });
             return true;
@@ -141,11 +204,18 @@ pub fn try_build_contact_for_entry(ctx: &ReducerContext, character_local: &Magic
     }
 
     if collision_entry.entry_type == CollisionEntryType::Map {
-        let map_piece = ctx.db.map().id().find(collision_entry.id).expect("Colliding Map Piece Not Found");
+        let map_piece_option = get_map_piece_by_id(map_pieces, map_piece_indices, collision_entry.id);
+        if map_piece_option.is_none() { return false; }
+        let map_piece = map_piece_option.unwrap();
 
         let collider_b: &Vec<ConvexHullCollider> = &map_piece.collider.convex_hulls;
         let position_b = DbVector3 { x: 0.0, y: 0.0, z: 0.0 };
         let yaw_radians_b: f32 = 0.0;
+        let broadphase_padding: f32 = 0.05;
+
+        if broadphase_radius_overlap(&character_local.collider, position_a, yaw_radians_a, &map_piece.collider, position_b, yaw_radians_b, broadphase_padding) == false {
+            return false;
+        }
 
         if solve_gjk(collider_a, position_a, yaw_radians_a, collider_b, position_b, yaw_radians_b, &mut gjk_result, gjk_iterations) == false { 
             return false; 
@@ -153,7 +223,8 @@ pub fn try_build_contact_for_entry(ctx: &ReducerContext, character_local: &Magic
 
         let center_b_world = get_collider_center_world(&map_piece.collider, position_b, yaw_radians_b);
 
-        if epa_solve(&gjk_result, collider_a, position_a, yaw_radians_a, collider_b, position_b, yaw_radians_b, &mut epa_contact) {
+        let epa_converged = epa_solve(&gjk_result, collider_a, position_a, yaw_radians_a, collider_b, position_b, yaw_radians_b, &mut epa_contact);
+        if epa_converged || epa_contact.depth > 1e-4 {
             let contact_normal = compute_contact_normal(&ctx, epa_contact.normal, center_a_world, center_b_world);
             contacts.push(CollisionContact { normal: contact_normal, penetration_depth: epa_contact.depth, collision_type: CollisionEntryType::Map });
             return true;
@@ -165,7 +236,7 @@ pub fn try_build_contact_for_entry(ctx: &ReducerContext, character_local: &Magic
     false
 }
 
-pub fn try_force_overlap_for_entry(ctx: &ReducerContext, character: &mut Magician, entry: &CollisionEntry, was_grounded: bool) -> bool { // Calculates approximate distance between player and map pieces and if close, pulls them together with small position correction to emulate sticky behavior (needed for ramps)
+pub fn try_force_overlap_for_entry(ctx: &ReducerContext, map_pieces: &[Map], map_piece_indices: &HashMap<u64, usize>, character: &mut Magician, entry: &CollisionEntry, was_grounded: bool) -> bool { // Calculates approximate distance between player and map pieces and if close, pulls them together with small position correction to emulate sticky behavior (needed for ramps)
     if entry.entry_type != CollisionEntryType::Map { return false; }
     if was_grounded == false && character.kinematic_information.grounded == false { return false; }
 
@@ -177,14 +248,17 @@ pub fn try_force_overlap_for_entry(ctx: &ReducerContext, character: &mut Magicia
     let min_ground_dot: f32 = 0.75;
     let floor_up_dot: f32 = 0.95;
 
-    let max_vertical_gap_ramp: f32 = 0.04;
-    let max_vertical_snap: f32 = 0.01;
-    let tiny_overlap: f32 = 0.01;
-    let overlap_enable_gap: f32 = 0.02;
+    let base_max_vertical_gap_ramp: f32 = 0.04;
+    let base_max_vertical_snap: f32 = 0.008;
+    let base_tiny_overlap: f32 = 0.006;
+    let base_overlap_enable_gap: f32 = 0.02;
 
     let collider_a = &character.collider;
 
-    let map_piece = ctx.db.map().id().find(entry.id).expect("Colliding Map Piece Not Found"); // Map pieces are static in db, should always exist
+    let map_piece_option = get_map_piece_by_id(map_pieces, map_piece_indices, entry.id);
+    if map_piece_option.is_none() { return false; }
+    let map_piece = map_piece_option.unwrap(); // Map pieces are static in db, should always exist
+    if map_piece.name.contains("Ramp") == false { return false; } // Sticky overlap exists to stabilize ramps, so skip expensive distance checks on flat pieces
     let collider_b = &map_piece.collider;
 
     let position_a = character.position;
@@ -192,6 +266,10 @@ pub fn try_force_overlap_for_entry(ctx: &ReducerContext, character: &mut Magicia
 
     let yaw_a: f32 = to_radians(character.rotation.yaw);
     let yaw_b: f32 = 0.0;
+
+    if broadphase_radius_overlap(collider_a, position_a, yaw_a, collider_b, position_b, yaw_b, base_max_vertical_gap_ramp + 0.05) == false {
+        return false;
+    }
 
     let mut distance_result: GjkDistanceResult = Default::default();
 
@@ -209,11 +287,64 @@ pub fn try_force_overlap_for_entry(ctx: &ReducerContext, character: &mut Magicia
     if up_dot < min_ground_dot { return false; }
     if up_dot > floor_up_dot { return false; }
 
+    let horizontal_velocity = DbVector3 { x: character.requested_velocity.x, y: 0.0, z: character.requested_velocity.z };
+    let ramp_horizontal_normal = DbVector3 { x: contact_normal.x, y: 0.0, z: contact_normal.z };
+
+    let horizontal_speed_sq: f32 = dot(horizontal_velocity, horizontal_velocity);
+    let ramp_horizontal_normal_sq: f32 = dot(ramp_horizontal_normal, ramp_horizontal_normal);
+
+    let mut moving_up_ramp: bool = false;
+    let mut moving_down_ramp: bool = false;
+
+    if horizontal_speed_sq > 1e-6 && ramp_horizontal_normal_sq > 1e-6 {
+        let horizontal_velocity_unit = normalize_small_vector(horizontal_velocity, DbVector3 { x: 0.0, y: 0.0, z: 0.0 });
+        let ramp_horizontal_normal_unit = normalize_small_vector(ramp_horizontal_normal, DbVector3 { x: 0.0, y: 0.0, z: 0.0 });
+        let ramp_alignment: f32 = dot(horizontal_velocity_unit, ramp_horizontal_normal_unit);
+
+        moving_up_ramp = ramp_alignment < -0.15;
+        moving_down_ramp = ramp_alignment > 0.15;
+    }
+
     let delta = sub(distance_result.point_on_a, distance_result.point_on_b);
     let vertical_gap: f32 = dot(delta, world_up);
 
     if vertical_gap <= 0.0 { return false; }
+
+    let max_vertical_gap_ramp: f32 =
+        if moving_up_ramp { 0.03 }
+        else if moving_down_ramp { 0.055 }
+        else { base_max_vertical_gap_ramp };
+
     if vertical_gap > max_vertical_gap_ramp { return false; }
+
+    let grounded_grace_gap: f32 =
+        if moving_up_ramp { 0.03 }
+        else if moving_down_ramp { 0.05 }
+        else { 0.04 };
+
+    if vertical_gap <= grounded_grace_gap { // Keeps ramps stable near seams without always needing a large downward pull
+        character.kinematic_information.grounded = true;
+
+        if character.requested_velocity.y <= 0.0 {
+            character.requested_velocity.y = 0.0;
+            character.corrected_velocity.y = 0.0;
+        }
+    }
+
+    let max_vertical_snap: f32 =
+        if moving_up_ramp { 0.004 }
+        else if moving_down_ramp { 0.012 }
+        else { base_max_vertical_snap };
+
+    let tiny_overlap: f32 =
+        if moving_up_ramp { 0.002 }
+        else if moving_down_ramp { 0.008 }
+        else { base_tiny_overlap };
+
+    let overlap_enable_gap: f32 =
+        if moving_up_ramp { 0.01 }
+        else if moving_down_ramp { 0.025 }
+        else { base_overlap_enable_gap };
 
     let mut snap_down: f32 = vertical_gap;
     if vertical_gap <= overlap_enable_gap { snap_down = vertical_gap + tiny_overlap; }
@@ -267,7 +398,7 @@ pub fn try_perform_attack(ctx: &ReducerContext, magician: &mut Magician, attack_
     let shot_delta = sub(aim_point, spawn_point);
     let shot_direction = normalize_small_vector(shot_delta, camera_forward);
 
-    let shot_hit = raycast_match(ctx, spawn_point, shot_direction, attack_information.max_distance); // Checks for a hit based on the rebuilt data (single target)
+    let shot_hit = raycast_beam_match(ctx, spawn_point, shot_direction, attack_information.max_distance, ATTACK_BEAM_HALF_ANGLE_DEGREES); // Checks for a hit based on the rebuilt data (multi ray beam)
     if shot_hit.hit && shot_hit.hit_type == RaycastHitType::Magician {
 
         damage_effect.target_name = shot_hit.hit_name;
@@ -351,7 +482,7 @@ pub fn try_hypnotise(ctx: &ReducerContext, magician: &mut Magician, camera_infor
     let shot_delta = sub(aim_point, spawn_point);
     let shot_direction = normalize_small_vector(shot_delta, camera_forward);
 
-    let raycast = raycast_match(ctx, spawn_point, shot_direction, camera_information.max_distance);
+    let raycast = raycast_beam_match(ctx, spawn_point, shot_direction, camera_information.max_distance, HYPNOSIS_BEAM_HALF_ANGLE_DEGREES);
 
     raycast
 }

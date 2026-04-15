@@ -1,3 +1,4 @@
+use std::sync::OnceLock;
 use crate::*;
 
 pub static IDLE_LEG_VERTICES: &[DbVector3] = &[
@@ -102,32 +103,18 @@ pub static IDLE_HEAD_VERTICES: &[DbVector3] = &[
 pub static IDLE_HEAD_TRIANGLE_INDICES_LOCAL: &[i32] = &[0, 4, 1, 10, 8, 18, 14, 20, 18, 4, 10, 12, 10, 18, 12, 18, 20, 12, 4, 0, 2, 0, 8, 2, 8, 10, 2, 10, 4, 2, 20, 14, 17, 11, 9, 3, 9, 1, 3, 1, 4, 3, 1, 9, 7, 0, 1, 7, 8, 14, 16, 14, 18, 16, 18, 8, 16, 4, 12, 13, 12, 20, 13, 9, 11, 19, 11, 13, 19, 20, 17, 19, 17, 9, 19, 9, 17, 15, 17, 14, 15, 14, 7, 15, 7, 9, 15, 8, 0, 6, 0, 7, 6, 7, 14, 6, 14, 8, 6, 11, 3, 5, 3, 4, 5, 4, 13, 5, 13, 11, 5, 13, 20, 21, 20, 19, 21, 19, 13, 21];
 
 pub fn MagicianIdleCollider() -> ComplexCollider {
-    let idle_leg_hull: ConvexHullCollider = ConvexHullCollider {
-        vertices_local: IDLE_LEG_VERTICES.to_vec(),
-        triangle_indices_local: IDLE_LEG_TRIANGLE_INDICES_LOCAL.to_vec(),
-        margin: 0.0,
-        collider_type: ConvexHullColliderType::Leg
-    };
-    
-    let idle_body_hull: ConvexHullCollider = ConvexHullCollider {
-        vertices_local: IDLE_BODY_VERTICES.to_vec(),
-        triangle_indices_local: IDLE_BODY_TRIANGLE_INDICES_LOCAL.to_vec(),
-        margin: 0.0,
-        collider_type: ConvexHullColliderType::Body
-    };
+    static COLLIDER: OnceLock<ComplexCollider> = OnceLock::new();
 
-    let idle_head_hull: ConvexHullCollider = ConvexHullCollider {
-        vertices_local: IDLE_HEAD_VERTICES.to_vec(),
-        triangle_indices_local: IDLE_HEAD_TRIANGLE_INDICES_LOCAL.to_vec(),
-        margin: 0.0,
-        collider_type: ConvexHullColliderType::Head
-    };
+    COLLIDER.get_or_init(|| {
+        let idle_leg_hull: ConvexHullCollider = create_convex_hull_collider(IDLE_LEG_VERTICES, IDLE_LEG_TRIANGLE_INDICES_LOCAL, 0.0, ConvexHullColliderType::Leg);
+        let idle_body_hull: ConvexHullCollider = create_convex_hull_collider(IDLE_BODY_VERTICES, IDLE_BODY_TRIANGLE_INDICES_LOCAL, 0.0, ConvexHullColliderType::Body);
+        let idle_head_hull: ConvexHullCollider = create_convex_hull_collider(IDLE_HEAD_VERTICES, IDLE_HEAD_TRIANGLE_INDICES_LOCAL, 0.0, ConvexHullColliderType::Head);
+        let idle_convex_hulls: Vec<ConvexHullCollider> = vec![
+            idle_leg_hull,
+            idle_body_hull,
+            idle_head_hull
+        ];
 
-    let idle_convex_hulls: Vec<ConvexHullCollider> = vec![
-        idle_leg_hull,
-        idle_body_hull,
-        idle_head_hull
-    ];
-
-    ComplexCollider { convex_hulls: idle_convex_hulls, center_point: DbVector3 { x: 0.0, y: 0.90, z: 0.03 } }
+        create_complex_collider(idle_convex_hulls, DbVector3 { x: 0.0, y: 0.90, z: 0.03 })
+    }).clone()
 }

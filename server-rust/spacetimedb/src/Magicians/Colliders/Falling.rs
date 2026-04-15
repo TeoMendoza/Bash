@@ -1,3 +1,4 @@
+use std::sync::OnceLock;
 use crate::*;
 
 pub static FALLING_LEG_VERTICES: &[DbVector3] = &[
@@ -80,28 +81,18 @@ pub static FALLING_HEAD_VERTICES: &[DbVector3] = &[
 pub static FALLING_HEAD_TRIANGLE_INDICES_LOCAL: &[i32] = &[3, 10, 4, 10, 3, 9, 10, 9, 11, 9, 13, 11, 10, 5, 7, 5, 4, 7, 4, 10, 7, 13, 9, 12, 5, 13, 2, 13, 12, 2, 1, 4, 2, 4, 5, 2, 5, 10, 8, 10, 11, 8, 11, 13, 8, 13, 5, 8, 9, 3, 6, 3, 12, 6, 12, 9, 6, 3, 4, 0, 4, 1, 0, 1, 2, 0, 2, 12, 0, 12, 3, 0];
 
 pub fn MagicianFallingCollider() -> ComplexCollider {
-    let falling_leg_hull: ConvexHullCollider = ConvexHullCollider {
-        vertices_local: FALLING_LEG_VERTICES.to_vec(),
-        triangle_indices_local: FALLING_LEG_TRIANGLE_INDICES_LOCAL.to_vec(),
-        margin: 0.0,
-        collider_type: ConvexHullColliderType::Leg
-    };
-    let falling_body_hull: ConvexHullCollider = ConvexHullCollider {
-        vertices_local: FALLING_BODY_VERTICES.to_vec(),
-        triangle_indices_local: FALLING_BODY_TRIANGLE_INDICES_LOCAL.to_vec(),
-        margin: 0.0,
-        collider_type: ConvexHullColliderType::Body
-    };
-    let falling_head_hull: ConvexHullCollider = ConvexHullCollider {
-        vertices_local: FALLING_HEAD_VERTICES.to_vec(),
-        triangle_indices_local: FALLING_HEAD_TRIANGLE_INDICES_LOCAL.to_vec(),
-        margin: 0.0,
-        collider_type: ConvexHullColliderType::Head
-    };
-    let falling_convex_hulls: Vec<ConvexHullCollider> = vec![
-        falling_leg_hull,
-        falling_body_hull,
-        falling_head_hull
-    ];
-    ComplexCollider { convex_hulls: falling_convex_hulls, center_point: DbVector3 { x: -0.05, y: 1.00, z: -0.03 } }
+    static COLLIDER: OnceLock<ComplexCollider> = OnceLock::new();
+
+    COLLIDER.get_or_init(|| {
+        let falling_leg_hull: ConvexHullCollider = create_convex_hull_collider(FALLING_LEG_VERTICES, FALLING_LEG_TRIANGLE_INDICES_LOCAL, 0.0, ConvexHullColliderType::Leg);
+        let falling_body_hull: ConvexHullCollider = create_convex_hull_collider(FALLING_BODY_VERTICES, FALLING_BODY_TRIANGLE_INDICES_LOCAL, 0.0, ConvexHullColliderType::Body);
+        let falling_head_hull: ConvexHullCollider = create_convex_hull_collider(FALLING_HEAD_VERTICES, FALLING_HEAD_TRIANGLE_INDICES_LOCAL, 0.0, ConvexHullColliderType::Head);
+        let falling_convex_hulls: Vec<ConvexHullCollider> = vec![
+            falling_leg_hull,
+            falling_body_hull,
+            falling_head_hull
+        ];
+
+        create_complex_collider(falling_convex_hulls, DbVector3 { x: -0.05, y: 1.00, z: -0.03 })
+    }).clone()
 }

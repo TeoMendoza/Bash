@@ -1,3 +1,4 @@
+use std::sync::OnceLock;
 use crate::*;
 
 pub static JUMP_LEG_VERTICES: &[DbVector3] = &[
@@ -68,28 +69,18 @@ pub static JUMP_HEAD_VERTICES: &[DbVector3] = &[
 pub static JUMP_HEAD_TRIANGLE_INDICES_LOCAL: &[i32] = &[4, 1, 3, 1, 4, 0, 4, 7, 12, 7, 3, 11, 3, 1, 11, 7, 4, 5, 4, 3, 5, 3, 7, 5, 9, 0, 8, 0, 4, 8, 1, 0, 10, 0, 9, 10, 11, 1, 10, 4, 12, 6, 12, 8, 6, 8, 4, 6, 10, 9, 16, 9, 8, 14, 8, 12, 14, 16, 9, 14, 7, 11, 15, 11, 10, 17, 10, 16, 17, 15, 11, 17, 16, 14, 18, 14, 12, 18, 12, 7, 18, 15, 17, 18, 17, 16, 18, 7, 15, 13, 15, 18, 13, 18, 7, 13];
 
 pub fn MagicianJumpingCollider() -> ComplexCollider {
-    let jump_leg_hull: ConvexHullCollider = ConvexHullCollider {
-        vertices_local: JUMP_LEG_VERTICES.to_vec(),
-        triangle_indices_local: JUMP_LEG_TRIANGLE_INDICES_LOCAL.to_vec(),
-        margin: 0.0,
-        collider_type: ConvexHullColliderType::Leg
-    };
-    let jump_body_hull: ConvexHullCollider = ConvexHullCollider {
-        vertices_local: JUMP_BODY_VERTICES.to_vec(),
-        triangle_indices_local: JUMP_BODY_TRIANGLE_INDICES_LOCAL.to_vec(),
-        margin: 0.0,
-        collider_type: ConvexHullColliderType::Body
-    };
-    let jump_head_hull: ConvexHullCollider = ConvexHullCollider {
-        vertices_local: JUMP_HEAD_VERTICES.to_vec(),
-        triangle_indices_local: JUMP_HEAD_TRIANGLE_INDICES_LOCAL.to_vec(),
-        margin: 0.0,
-        collider_type: ConvexHullColliderType::Head
-    };
-    let jump_convex_hulls: Vec<ConvexHullCollider> = vec![
-        jump_leg_hull,
-        jump_body_hull,
-        jump_head_hull
-    ];
-    ComplexCollider { convex_hulls: jump_convex_hulls, center_point: DbVector3 { x: -0.06, y: 1.30, z: -0.03 } }
+    static COLLIDER: OnceLock<ComplexCollider> = OnceLock::new();
+
+    COLLIDER.get_or_init(|| {
+        let jump_leg_hull: ConvexHullCollider = create_convex_hull_collider(JUMP_LEG_VERTICES, JUMP_LEG_TRIANGLE_INDICES_LOCAL, 0.0, ConvexHullColliderType::Leg);
+        let jump_body_hull: ConvexHullCollider = create_convex_hull_collider(JUMP_BODY_VERTICES, JUMP_BODY_TRIANGLE_INDICES_LOCAL, 0.0, ConvexHullColliderType::Body);
+        let jump_head_hull: ConvexHullCollider = create_convex_hull_collider(JUMP_HEAD_VERTICES, JUMP_HEAD_TRIANGLE_INDICES_LOCAL, 0.0, ConvexHullColliderType::Head);
+        let jump_convex_hulls: Vec<ConvexHullCollider> = vec![
+            jump_leg_hull,
+            jump_body_hull,
+            jump_head_hull
+        ];
+
+        create_complex_collider(jump_convex_hulls, DbVector3 { x: -0.06, y: 1.30, z: -0.03 })
+    }).clone()
 }

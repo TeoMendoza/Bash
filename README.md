@@ -1,27 +1,28 @@
 ## Overview
 
-3D Brawler is a fast-paced, skill-driven free-for-all arena fighter where up to 8–12 players collide in chaotic, ever-shifting battlegrounds. The game emphasizes mechanical precision and strategic decision making, while staying accessible and non-punishing through rapid respawns. This balance encourages bold plays, constant action, and high energy moments throughout every match.
+Bash is a fast-paced, skill-driven free-for-all arena brawler where 8–10 players compete in high-intensity matches built around mechanical precision, movement, and ability mastery. Designed as a pure combat experience, the game removes objective-based modes and focuses entirely on player versus player interaction, creating constant engagement and minimal downtime.
 
-Progress is measured through a dynamic scoring system that tracks multiple performance factors, including kills, damage dealt, kill streaks, and survival time. This approach rewards diverse playstyles: dominating through eliminations, applying consistent pressure, or excelling in survivability. Victory comes not just from landing final blows, but from consistently performing across all aspects of combat.
+The core gameplay loop emphasizes responsive controls, grounded physics, and tight combat feedback. Players rely on accurate aim, positioning, and timing to outplay opponents, while character-specific abilities introduce layered decision making without overwhelming the core mechanics. Encounters reward skillful execution, whether through direct eliminations, sustained damage output, or smart ability usage.
 
-Though combat is grounded in realistic physics, variety emerges from both character abilities and the arenas themselves. Each stage introduces unique dynamics that shape fights in different ways, creating opportunities for creative positioning, improvisation, and dramatic comebacks. The result is gameplay that feels unpredictable, chaotic, and deeply skillful, ensuring no two matches ever play out the same.
+Matches operate on a dynamic scoring system that values overall performance rather than just final blows. Players earn points through damage dealt, eliminations, streaks, and consistent pressure, allowing multiple viable playstyles. Aggressive players, calculated duelists, and opportunistic finishers can all succeed within the same system.
+
+The result is a chaotic but controlled arena experience that prioritizes skill expression, fast iteration between fights, and high replayability, where every match feels active, competitive, and mechanically rewarding.
 
 ---
 
 ## Roadmap
 - [x] SpacetimeDB Tutorial Game  
-- [x] Systems Design Document Refinement  
-- [x] Character Design Refinement  
+- [x] Systems Design Document
+- [x] Character Design Document 
 - [x] Initial SpacetimeDB & Unity Integration + Basic Multiplayer Synchronization  
 - [x] Physics Engine Prototype (Primitive Colliders)  
 - [x] Physics Engine 2.0 (Generalized Convex Shape Support + GJK/EPA Collision Algorithms)  
-- [ ] Migrate SpacetimeDB Backend from C# to Rust  
-- [ ] Server-Side Raycasting for Attack and Projectile Registration  
-- [ ] Implement First Playable Character (The Magician)  
-- [ ] Model and Implement Initial Multiplayer Map  
-- [ ] Gameplay Testing, Iteration, and Mechanical Adjustment  
-- [ ] Full Art, Animation, and Sound Design for First Playable Version  
-- [ ] Final Polish, Testing, and Balance Pass  
+- [x] Physics Engine 3.0 (Raycasting System Extension)
+- [x] First Playable Character (The Magician)  
+- [x] Initial Multiplayer Map  
+- [x] Gameplay Testing, Iteration, and Mechanical Adjustment  
+- [x] Full Art, Animation, and Sound Design for First Playable Version  
+- [x] Final Polish, Testing, and Balance Pass  
 
 ### Long Term Goals
 - [ ] Implement Additional Playable Characters (The Monk, The Hunter)  

@@ -1,6 +1,6 @@
 ## Overview
 
-3D Brawler features three unique fighters, each built around a distinct playstyle, consisting of a base attack, three core abilities, and a powerful ultimate ability. Their designs are intentionally interwoven in a rock-paper-scissors inspired framework: every character has specific strengths and vulnerabilities against each of the others.
+Bash features three unique fighters, each built around a distinct playstyle, consisting of a base attack, three core abilities, and a powerful ultimate ability. Their designs are intentionally interwoven in a rock-paper-scissors inspired framework: every character has specific strengths and vulnerabilities against each of the others.
 
 This interplay creates a balanced ecosystem where no fighter is universally dominant. Success relies on reading matchups, mastering timing, and adapting to an opponent’s style. With the option to switch characters mid match, battles naturally shift in pace and tone, ensuring gameplay remains skillful, varied, and engaging from start to finish.
 

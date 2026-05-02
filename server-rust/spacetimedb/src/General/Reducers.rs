@@ -78,6 +78,12 @@ pub fn connect(ctx: &ReducerContext) // Adds player to logged_in_players and out
 {
     if IsUnitTestModeEnabled(ctx) { return; } // Cuts reducer short if we are unit testing to ensure persistent data while tests run
 
+    // Clean up any stale logged_in row from a previous session that didn't disconnect cleanly
+    if let Some(stale) = ctx.db.logged_in_players().identity().find(ctx.sender()) {
+        ctx.db.logged_in_players().identity().delete(ctx.sender());
+        ctx.db.logged_out_players().insert(stale);
+    }
+
     let logged_out_player_option = ctx.db.logged_out_players().identity().find(ctx.sender());
 
     if let Some(logged_out_player) = logged_out_player_option {
@@ -98,26 +104,28 @@ pub fn disconnect(ctx: &ReducerContext) // Cleans up data related to player - Ca
 {
     if IsUnitTestModeEnabled(ctx) { return; } // Cuts reducer short if we are unit testing to ensure persistent data while tests run
 
-    let player = ctx.db.logged_in_players().identity().find(ctx.sender()).expect("Player not found");
+    let player_option = ctx.db.logged_in_players().identity().find(ctx.sender());
 
-    let magician_option = ctx.db.magician().identity().find(ctx.sender());
-    let respawn_timer_option = ctx.db.respawn_timers().identity().find(ctx.sender()); 
+    if let Some(player) = player_option {
+        let magician_option = ctx.db.magician().identity().find(ctx.sender());
+        let respawn_timer_option = ctx.db.respawn_timers().identity().find(ctx.sender()); 
 
-    if let Some(mut magician) = magician_option { // Case: in match
-        cleanup_on_disconnect_or_death(ctx, &mut magician);
-        remove_player_info_from_game(ctx, magician.game_id);
-        ctx.db.magician().identity().delete(player.identity);
-    }
+        if let Some(mut magician) = magician_option { // Case: in match
+            cleanup_on_disconnect_or_death(ctx, &mut magician);
+            remove_player_info_from_game(ctx, magician.game_id);
+            ctx.db.magician().identity().delete(player.identity);
+        }
 
-    else if let Some(respawn_timer) = respawn_timer_option { // Case: dead & respawning
-        remove_player_info_from_game(ctx, respawn_timer.game_id);
-        ctx.db.respawn_timers().scheduled_id().delete(respawn_timer.scheduled_id); 
-    }
-    
-    ctx.db.logged_in_players().identity().delete(player.identity); // Case: In lobby but still executed for all cases
-    ctx.db.logged_out_players().insert(player);
-    
-    log::info!("{} just disconnected.", ctx.sender());
+        else if let Some(respawn_timer) = respawn_timer_option { // Case: dead & respawning
+            remove_player_info_from_game(ctx, respawn_timer.game_id);
+            ctx.db.respawn_timers().scheduled_id().delete(respawn_timer.scheduled_id); 
+        }
+        
+        ctx.db.logged_in_players().identity().delete(player.identity); // Case: In lobby but still executed for all cases
+        ctx.db.logged_out_players().insert(player);
+        
+        log::info!("{} just disconnected.", ctx.sender());
+    }    
 }
 
 #[reducer]
@@ -139,7 +147,7 @@ pub fn try_join_game(ctx: &ReducerContext) // Adds player to first unstarted gam
         };
 
         game.scoreboard.players.push(scoreboard_player);
-        if game.current_players == 2 && game.in_progress != true { // Starts game if full - No new players can join, players can leave and rejoin (rejoin WIP)
+        if game.current_players == 10 && game.in_progress != true { // Starts game if full - No new players can join, players can leave and rejoin (rejoin WIP)
             game.in_progress = true;
             for scoreboard_player in game.scoreboard.players.iter_mut() {
                 scoreboard_player.score = 0;
@@ -161,6 +169,24 @@ pub fn try_join_game(ctx: &ReducerContext) // Adds player to first unstarted gam
         ctx.db.game().id().update(game);
     } 
 }
+
+#[reducer]
+pub fn start_game_manual(ctx: &ReducerContext) // Client side invoked - Starts match manually
+{
+    let player_option = ctx.db.logged_in_players().identity().find(ctx.sender());
+    let magician_option = ctx.db.magician().identity().find(ctx.sender());
+
+    if let Some(_player) = player_option {
+        if let Some(magician) = magician_option {
+            if let Some(mut game) = ctx.db.game().id().find(magician.game_id) {
+                if game.in_progress == false {
+                    game.in_progress = true;
+                    ctx.db.game().id().update(game);
+                }
+            }
+        }
+    }
+} 
 
 #[reducer]
 pub fn try_leave_game(ctx: &ReducerContext) // Cleans up data related to player but only match related data - Similar functionality to disconnect

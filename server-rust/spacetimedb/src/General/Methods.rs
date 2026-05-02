@@ -48,8 +48,7 @@ pub fn cleanup_on_game_end(ctx: &ReducerContext, game_id: u32) { // Cleans up da
     ctx.db.handle_magician_colliders_timer().game_id().delete(game_id);
 }
 
-pub fn remove_player_info_from_game(ctx: &ReducerContext, game_id: u32) { // Decrements games current players and force ends game if 0 (force ends WIP)
-
+ pub fn remove_player_info_from_game(ctx: &ReducerContext, game_id: u32) { // Decrements games current players and force ends game if 0
     let game_option = ctx.db.game().id().find(game_id);
     if let Some(mut game) = game_option {
         if game.current_players > 0 {
@@ -61,19 +60,28 @@ pub fn remove_player_info_from_game(ctx: &ReducerContext, game_id: u32) { // Dec
             scoreboard_players.swap_remove(index);
         }
 
+        if game.current_players == 0 {
+            cleanup_on_game_end(ctx, game_id);
+            ctx.db.game().id().delete(game_id);
+            return;
+        }
+
         ctx.db.game().id().update(game);
     }
 }
-
+ 
 pub fn create_game(ctx: &ReducerContext) -> Game { // Creates and inserts new game with scheduled reducers configured - Test player parameter adds fake player (parameter WIP)
     let created_game = ctx.db.game().insert(Game { id: 0, max_players: 12, current_players: 0, in_progress: false, scoreboard: Scoreboard { players: Vec::new() } });
-    let tick_millis: u64 = 1000 / 60;
-    let tick_rate: f32 = 1.0 / 60.0;
+    let tick_millis: u64 = 1000 / 20;
+    let tick_rate: f32 = 1.0 / 20.0;
 
-    let slow_tick_millis: u64 = 1000 / 30;
-    let slow_tick_rate: f32 = 1.0 / 30.0;
+    let slow_tick_millis: u64 = 1000 / 10;
+    let slow_tick_rate: f32 = 1.0 / 10.0;
 
-    ctx.db.move_all_magicians().insert(MoveAllMagiciansTimer { scheduled_id: 0, scheduled_at: ScheduleAt::Interval(Duration::from_millis(tick_millis).into()), tick_rate, game_id: created_game.id });
+    let high_tick_millis: u64 = 1000 / 60;
+    let high_tick_rate: f32 = 1.0 / 60.0;
+
+    ctx.db.move_all_magicians().insert(MoveAllMagiciansTimer { scheduled_id: 0, scheduled_at: ScheduleAt::Interval(Duration::from_millis(high_tick_millis).into()), tick_rate: high_tick_rate, game_id: created_game.id });
     ctx.db.handle_magician_timers_timer().insert(HandleMagicianTimersTimer { scheduled_id: 0, scheduled_at: ScheduleAt::Interval(Duration::from_millis(slow_tick_millis).into()), tick_rate: slow_tick_rate, game_id: created_game.id });
     ctx.db.handle_magician_stateless_timers_timer().insert(HandleMagicianStatelessTimersTimer { scheduled_id: 0, scheduled_at: ScheduleAt::Interval(Duration::from_millis(slow_tick_millis).into()), tick_rate: slow_tick_rate, game_id: created_game.id });
     ctx.db.gravity_magician().insert(GravityTimerMagician { scheduled_id: 0, scheduled_at: ScheduleAt::Interval(Duration::from_millis(tick_millis).into()), tick_rate, gravity: 20.0, game_id: created_game.id });

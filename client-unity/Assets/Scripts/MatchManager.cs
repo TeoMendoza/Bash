@@ -118,7 +118,7 @@ public class MatchManager : MonoBehaviour
 
     void HandleMenuToggle()
     {
-        if (!Initalized || GameId is null || !Input.GetKeyDown(KeyCode.Escape))
+        if (!Initalized || GameId is null || !Input.GetKeyDown(KeyCode.Tab))
             return;
 
         SetMenuActive(!InGameMenuActive);
@@ -233,10 +233,6 @@ public class MatchManager : MonoBehaviour
     {
         foreach (Map MapPiece in Conn.Db.Map.Iter())
         {
-            if (MapPiece.Name == "Middle Ramp 2") {
-                Debug.Log($"MIDDLE RAMP 2 HELLO! Id {(uint)MapPiece.Id}");
-            }
-
             uint MapPieceId = (uint)MapPiece.Id;
             if (MapPieces.ContainsKey(MapPieceId))      
                 continue;

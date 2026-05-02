@@ -653,6 +653,7 @@ namespace SpacetimeDB.Types
                 Reducer.Hypnotise args => Reducers.InvokeHypnotise(eventContext, args),
                 Reducer.MoveMagiciansLagTest args => Reducers.InvokeMoveMagiciansLagTest(eventContext, args),
                 Reducer.RemoveCollisionEntryMagician args => Reducers.InvokeRemoveCollisionEntryMagician(eventContext, args),
+                Reducer.StartGameManual args => Reducers.InvokeStartGameManual(eventContext, args),
                 Reducer.TakeArtificalDamage args => Reducers.InvokeTakeArtificalDamage(eventContext, args),
                 Reducer.TakeArtificalDust args => Reducers.InvokeTakeArtificalDust(eventContext, args),
                 Reducer.TestJoinAndStartGameSinglePlayer args => Reducers.InvokeTestJoinAndStartGameSinglePlayer(eventContext, args),

@@ -15,12 +15,12 @@ public class MagicianController : MonoBehaviour
     [SerializeField] MagicianWorldAudioManager WorldAudioManager;
 
     [Header("Tuning")]
-    public float SendRateHz = 20f;
+    public float SendRateHz = 30f;
     public float AimYawThresholdDegrees = 0.75f;
     public float AimPitchThresholdDegrees = 0.75f;
 
-    readonly float SensX = 200f;
-    readonly float SensY = 100f;
+    readonly float SensX = 5f;
+    readonly float SensY = 2.5f;
     readonly float MinPitch = -50f;
     readonly float MaxPitch = 75f;
 
@@ -51,6 +51,9 @@ public class MagicianController : MonoBehaviour
 
     float TargetForwardSpeed;
     float TargetHorizontalSpeed;
+
+    float SendTimer = 0f;
+    bool PendingJump = false;
 
     public void DisableInput() => InputEnabled = false;
     public void EnableInput() => InputEnabled = true;
@@ -176,9 +179,28 @@ public class MagicianController : MonoBehaviour
         if (!IsOwner || !InputEnabled)
             return;
 
-        HandleMovementRequests();
+        AccumulateMouseInput();
+
+        if (Input.GetKeyDown(KeyCode.Space)) PendingJump = true;
+
+        SendTimer += Time.deltaTime;
+        if (SendTimer >= 1f / SendRateHz)
+        {
+            SendTimer = 0f;
+            HandleMovementRequests();
+        }
+
         HandleCameraReliantActions();
         HandleNormalActions();
+    }
+
+    void AccumulateMouseInput()
+    {
+        float MouseX = Input.GetAxis("Mouse X");
+        float MouseY = Input.GetAxis("Mouse Y");
+
+        Yaw = Mathf.Repeat(Yaw + MouseX * SensX, 360f);
+        Pitch = Mathf.Clamp(Pitch - MouseY * SensY, MinPitch, MaxPitch);
     }
 
     void HandleMovementRequests()
@@ -278,9 +300,6 @@ public class MagicianController : MonoBehaviour
 
     void HandleNormalActions()
     {
-        if (Input.GetKeyDown(KeyCode.U))
-            GameManager.Conn.Reducers.DebugMode();
-
         if (Input.GetKeyDown(KeyCode.R))
         {
             GameManager.Conn.Reducers.HandleActionChangeRequestMagician(
@@ -326,12 +345,6 @@ public class MagicianController : MonoBehaviour
         if (Input.GetMouseButtonDown(1)) {
             GameManager.Conn.Reducers.HandleStatelessActionRequestMagician(new StatelessActionRequestMagician(Action: MagicianStatelessAction.Tarot));
         }
-
-        if (Input.GetKeyDown(KeyCode.M))
-            GameManager.Conn.Reducers.TakeArtificalDamage();
-
-        if (Input.GetKeyDown(KeyCode.L))
-            GameManager.Conn.Reducers.TakeArtificalDust();
     }
 
     public MovementRequest BuildMovementRequest()
@@ -353,21 +366,16 @@ public class MagicianController : MonoBehaviour
         if (Input.GetKey(KeyCode.D)) CurrentRequest.MoveRight = true;
 
         if (Input.GetKey(KeyCode.LeftShift)) CurrentRequest.Sprint = true;
-        if (Input.GetKeyDown(KeyCode.Space)) CurrentRequest.Jump = true;
         if (Input.GetKey(KeyCode.LeftControl)) CurrentRequest.Crouch = true;
 
-        float MouseX = Input.GetAxis("Mouse X");
-        float MouseY = Input.GetAxis("Mouse Y");
-
-        Yaw = Mathf.Repeat(Yaw + MouseX * SensX * Time.deltaTime, 360f);
-        Pitch = Mathf.Clamp(Pitch - MouseY * SensY * Time.deltaTime, MinPitch, MaxPitch);
+        if (PendingJump) { CurrentRequest.Jump = true; PendingJump = false; }
 
         CurrentRequest.Aim = new DbRotation2(Yaw, Pitch);
 
         return CurrentRequest;
     }
 
-    public bool IsPermissionOccupied(Magician Magician, string Key)
+    public static bool IsPermissionOccupied(Magician Magician, string Key)
     {
         foreach (PermissionEntry Entry in Magician.Permissions)
         {
@@ -584,7 +592,6 @@ public class MagicianController : MonoBehaviour
             else if (insertedEffect.EffectType == EffectType.Invincible)
                 MagicianOutwardHud.SetInvincible();
         }
-        
     }
 
     public void HandleMagicianEffectDelete(EventContext context, PlayerEffect deletedEffect)
@@ -595,7 +602,6 @@ public class MagicianController : MonoBehaviour
         }
 
         if (deletedEffect.TargetId == Id) {
-
             if (deletedEffect.EffectType == EffectType.Dust)
                 MagicianOutwardHud.SetOutwardDustCloudActive(false);
 

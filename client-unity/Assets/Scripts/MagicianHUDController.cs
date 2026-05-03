@@ -68,7 +68,7 @@ public class MagicianHUDController : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.I)) 
+        if (Input.GetKey(KeyCode.I)) 
             MagicianKitWidget.SetActive(true);
          
         else 

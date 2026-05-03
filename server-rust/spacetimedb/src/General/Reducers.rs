@@ -1,4 +1,5 @@
-use spacetimedb::{ReducerContext, ScheduleAt, Table, TimeDuration, rand::Rng, reducer};
+use spacetimedb::Query;
+use spacetimedb::{ReducerContext, ScheduleAt, Table, TimeDuration, ViewContext, rand::Rng, reducer, view};
 use crate::*;
 
 #[reducer(init)] // Init gets called at DB publish
@@ -183,6 +184,9 @@ pub fn start_game_manual(ctx: &ReducerContext) // Client side invoked - Starts m
             if let Some(mut game) = ctx.db.game().id().find(magician.game_id) {
                 if game.in_progress == false {
                     game.in_progress = true;
+                    let end_time = ctx.timestamp.checked_add(TimeDuration::from_micros(900_000_000)).expect("Match End Time Timestamp Overflow");
+                    let game_end_timer = GameTimersTimer {scheduled_id: 0, scheduled_at: ScheduleAt::Time(end_time), game_id: game.id};
+                    ctx.db.game_timers().insert(game_end_timer);
                     ctx.db.game().id().update(game);
                 }
             }
@@ -261,4 +265,32 @@ pub fn debug_mode(ctx: &ReducerContext) {
 
     let updated_row = ctx.db.debug_table().id().find(1).expect("Debug Row Should Exist After Update!");
     log::info!("After toggle: {}", updated_row.debug_on);
+}
+
+
+#[view(accessor = my_game, public)]
+fn my_game(ctx: &ViewContext) -> impl Query<Game> {
+    let empty = ctx.from.game().r#where(|g| g.id.eq(u32::MAX));
+    match ctx.db.magician().identity().find(ctx.sender()) {
+        Some(magician) => ctx.from.game().r#where(move |g| g.id.eq(magician.game_id)),
+        None => empty,
+    }
+}
+
+#[view(accessor = my_player, public)]
+fn my_player(ctx: &ViewContext) -> impl Query<Magician> {
+    let sender = ctx.sender();
+    ctx.from.magician().r#where(move |m| m.identity.eq(sender))
+}
+
+#[view(accessor = my_match_players, public)]
+fn my_match_players(ctx: &ViewContext) -> impl Query<Magician> {
+
+    let empty = ctx.from.magician().r#where(|g| g.id.eq(u64::MAX));
+    match ctx.db.magician().identity().find(ctx.sender()) {
+        Some(magician) => ctx.from.magician().r#where(move |m| m.game_id.eq(magician.game_id)),
+            
+        None => empty,
+    }
+    
 }

@@ -6,6 +6,7 @@ using System;
 
 public class MagicianController : MonoBehaviour
 {
+    private static readonly int UnavailableActionHash = Animator.StringToHash("UnavailableAction");
     [Header("Scene References")]
     [SerializeField] CinemachineCamera ThirdPersonCam;
     [SerializeField] GameObject ThirdPersonCamPivot;
@@ -145,7 +146,7 @@ public class MagicianController : MonoBehaviour
     public void HandleUnavailableRequest(EventContext ctx, UnavailableRequestEvent request)
     {
         if (IsOwner && request.Identity == Identity) {
-            Animator.SetTrigger("UnavailableAction");
+            Animator.SetTrigger(UnavailableActionHash);
             MatchManager.Instance.AudioManager.PlayUnavailableActionSound(IsOwner);
         }
     }
@@ -300,6 +301,9 @@ public class MagicianController : MonoBehaviour
 
     void HandleNormalActions()
     {
+        if (Input.GetKeyDown(KeyCode.P)) 
+            GameManager.Conn.Reducers.StartGameManual();
+
         if (Input.GetKeyDown(KeyCode.R))
         {
             GameManager.Conn.Reducers.HandleActionChangeRequestMagician(

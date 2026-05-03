@@ -165,10 +165,7 @@ public class MatchManager : MonoBehaviour
         long RemainingMicroseconds = GameEndTimestamp.TimeDurationSince(NowTimestamp).Microseconds;
 
         if (RemainingMicroseconds <= 0)
-        {
-            GameTimer.text = "00:00";
             return;
-        }
 
         double RemainingSeconds = RemainingMicroseconds / 1_000_000.0;
         int RemainingSecondsCeil = (int)Math.Ceiling(RemainingSeconds);

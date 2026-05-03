@@ -67,7 +67,6 @@ namespace SpacetimeDB.Types
         public global::SpacetimeDB.Col<Magician, DbRotation2> Rotation { get; }
         public global::SpacetimeDB.Col<Magician, DbVector3> RequestedVelocity { get; }
         public global::SpacetimeDB.Col<Magician, DbVector3> CorrectedVelocity { get; }
-        public global::SpacetimeDB.Col<Magician, ComplexCollider> Collider { get; }
         public global::SpacetimeDB.Col<Magician, System.Collections.Generic.List<CollisionEntry>> CollisionEntries { get; }
         public global::SpacetimeDB.Col<Magician, bool> IsColliding { get; }
         public global::SpacetimeDB.Col<Magician, MagicianState> State { get; }
@@ -89,7 +88,6 @@ namespace SpacetimeDB.Types
             Rotation = new global::SpacetimeDB.Col<Magician, DbRotation2>(tableName, "rotation");
             RequestedVelocity = new global::SpacetimeDB.Col<Magician, DbVector3>(tableName, "requested_velocity");
             CorrectedVelocity = new global::SpacetimeDB.Col<Magician, DbVector3>(tableName, "corrected_velocity");
-            Collider = new global::SpacetimeDB.Col<Magician, ComplexCollider>(tableName, "collider");
             CollisionEntries = new global::SpacetimeDB.Col<Magician, System.Collections.Generic.List<CollisionEntry>>(tableName, "collision_entries");
             IsColliding = new global::SpacetimeDB.Col<Magician, bool>(tableName, "is_colliding");
             State = new global::SpacetimeDB.Col<Magician, MagicianState>(tableName, "state");

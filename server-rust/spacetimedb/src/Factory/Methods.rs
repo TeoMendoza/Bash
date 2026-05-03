@@ -1,6 +1,6 @@
 use crate::*;
 
-pub fn create_magician(config: MagicianConfig) -> Magician { // Creates new magician and returns - Does not insert on it's own
+pub fn create_magician(config: MagicianConfig) -> (Magician, CharacterCollider) { // Creates new magician and returns - Does not insert on it's own
     let player = config.player;
     let game_id = config.game_id;
     let position = config.position;
@@ -55,12 +55,13 @@ pub fn create_magician(config: MagicianConfig) -> Magician { // Creates new magi
         ],
         bullets: bullets,
         bullet_capacity: bullet_capacity,
-        collider: MagicianIdleCollider(),
         collision_entries: vec![CollisionEntry { entry_type: CollisionEntryType::Map, id: 1 }, CollisionEntry { entry_type: CollisionEntryType::Map, id: 2 }, CollisionEntry { entry_type: CollisionEntryType::Map, id: 3 }, CollisionEntry { entry_type: CollisionEntryType::Map, id: 40 }, CollisionEntry { entry_type: CollisionEntryType::Map, id: 41 }, CollisionEntry { entry_type: CollisionEntryType::Map, id: 42 }, CollisionEntry { entry_type: CollisionEntryType::Map, id: 43 }], // Auto registers initial possible collisions (Pipe & Pipe Platform) aswell as world borders (permanent)
         is_colliding: false,
     };
 
-    magician
+    let collider = CharacterCollider { id: 0, character_id: magician.id, character: CharacterType::Magician, collider: MagicianIdleCollider() };
+
+    (magician, collider)
 }
 
 pub fn create_throwing_card() -> ThrowingCard { // Creates a throwing card (bullet) with damage effect

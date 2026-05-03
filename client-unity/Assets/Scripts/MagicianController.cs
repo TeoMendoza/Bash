@@ -19,8 +19,8 @@ public class MagicianController : MonoBehaviour
     public float AimYawThresholdDegrees = 0.75f;
     public float AimPitchThresholdDegrees = 0.75f;
 
-    readonly float SensX = 5f;
-    readonly float SensY = 2.5f;
+    readonly float SensX = 2f;
+    readonly float SensY = 1f;
     readonly float MinPitch = -50f;
     readonly float MaxPitch = 75f;
 

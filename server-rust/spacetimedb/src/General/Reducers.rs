@@ -113,6 +113,7 @@ pub fn disconnect(ctx: &ReducerContext) // Cleans up data related to player - Ca
         if let Some(mut magician) = magician_option { // Case: in match
             cleanup_on_disconnect_or_death(ctx, &mut magician);
             remove_player_info_from_game(ctx, magician.game_id);
+            ctx.db.character_colliders().character_id().delete(magician.id);
             ctx.db.magician().identity().delete(player.identity);
         }
 
@@ -161,9 +162,10 @@ pub fn try_join_game(ctx: &ReducerContext) // Adds player to first unstarted gam
         let effects = vec![create_invincible_effect(5.0)];
         let map_respawn_point = ctx.db.map_respawn_points().name().find("Center".to_string()).expect("Center Spawn Point Must Exist!");
         let magician_config = MagicianConfig {player, game_id: game.id, position: map_respawn_point.position, rotation: map_respawn_point.rotation };
-        let magician = create_magician(magician_config);
+        let (magician, collider) = create_magician(magician_config);
 
         let inserted_magician = ctx.db.magician().insert(magician);
+        let _inserted_collider = ctx.db.character_colliders().insert(collider);
         add_effects_to_table(ctx, effects, inserted_magician.id, inserted_magician.id, game.id);   
 
         ctx.db.game().id().update(game);
@@ -199,6 +201,7 @@ pub fn try_leave_game(ctx: &ReducerContext) // Cleans up data related to player 
         if let Some(mut magician) = magician_option {
             cleanup_on_disconnect_or_death(ctx, &mut magician);
             remove_player_info_from_game(ctx, magician.game_id);
+            ctx.db.character_colliders().character_id().delete(magician.id);
             ctx.db.magician().identity().delete(player.identity);
         }
 
@@ -228,9 +231,10 @@ pub fn handle_respawn(ctx: &ReducerContext, timer: RespawnTimersTimer) // Respaw
             let respawn_point = &spawn_points[random_index];
 
             let magician_config = MagicianConfig { player, game_id: timer.game_id, position: respawn_point.position, rotation: respawn_point.rotation };
-            let magician = create_magician(magician_config);
+            let (magician, collider) = create_magician(magician_config);
 
             let inserted_magician = ctx.db.magician().insert(magician);
+            let _inserted_collider = ctx.db.character_colliders().insert(collider);
             add_effects_to_table(ctx, effects, inserted_magician.id, inserted_magician.id, timer.game_id);       
         }
     }

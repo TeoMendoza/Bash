@@ -17,9 +17,10 @@ pub fn raycast_match(ctx: &ReducerContext, ray_origin: DbVector3, ray_direction:
     if let Some(magician) = magician_option {
         for other in ctx.db.magician().game_id().filter(magician.game_id) {
             if other.identity == ctx.sender() { continue; }
-            if segment_intersects_collider_bounding_sphere(ray_origin, ray_direction_unit, best_distance, &other.collider, other.position, to_radians(other.rotation.yaw), ray_padding) == false { continue; }
+            let Some(other_collider) = get_magician_collider(ctx, other.id) else { continue; };
+            if segment_intersects_collider_bounding_sphere(ray_origin, ray_direction_unit, best_distance, &other_collider, other.position, to_radians(other.rotation.yaw), ray_padding) == false { continue; }
 
-            let hit: Raycast = raycast_complex_collider(ray_origin, ray_direction_unit, best_distance, &other.collider, other.position, to_radians(other.rotation.yaw), RaycastHitType::Magician, other.id);
+            let hit: Raycast = raycast_complex_collider(ray_origin, ray_direction_unit, best_distance, &other_collider, other.position, to_radians(other.rotation.yaw), RaycastHitType::Magician, other.id);
             if hit.hit && hit.hit_distance < best_distance {
                 has_hit = true;
                 best_distance = hit.hit_distance;
@@ -159,9 +160,10 @@ pub fn raycast_cone_match(ctx: &ReducerContext, ray_origin: DbVector3, ray_forwa
         let map_pieces: Vec<Map> = ctx.db.map().iter().collect();
         for other in ctx.db.magician().game_id().filter(magician.game_id) {
             if other.identity == ctx.sender() { continue; }
+            let Some(other_collider) = get_magician_collider(ctx, other.id) else { continue; };
 
             let other_yaw_radians = to_radians(other.rotation.yaw);
-            let other_center_world = get_collider_center_world(&other.collider, other.position, other_yaw_radians);
+            let other_center_world = get_collider_center_world(&other_collider, other.position, other_yaw_radians);
 
             let center_vector_to_other = sub(other_center_world, ray_origin);
             let center_distance = magnitude(center_vector_to_other);
@@ -188,7 +190,7 @@ pub fn raycast_cone_match(ctx: &ReducerContext, ray_origin: DbVector3, ray_forwa
             let center_alignment = dot(forward_unit, center_unit_to_other);
             if center_alignment < min_dot { continue; }
 
-            let collider_hit = raycast_complex_collider(ray_origin, center_unit_to_other, max_distance, &other.collider, other.position, other_yaw_radians, RaycastHitType::Magician, other.id);
+            let collider_hit = raycast_complex_collider(ray_origin, center_unit_to_other, max_distance, &other_collider, other.position, other_yaw_radians, RaycastHitType::Magician, other.id);
             if collider_hit.hit == false { continue; }
 
             let map_blocker = raycast_map_only_match_for_pieces(&map_pieces, ray_origin, center_unit_to_other, collider_hit.hit_distance);

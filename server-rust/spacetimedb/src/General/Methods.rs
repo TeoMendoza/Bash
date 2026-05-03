@@ -13,6 +13,7 @@ pub fn handle_magician_death(ctx: &ReducerContext, killed_magician: &mut Magicia
 
     ctx.db.kill_logs().insert(KillLog { game_id: killed_magician.game_id, killer_name: killer_magician_name.to_string(), killed_name: killed_magician_name.to_string() });
     cleanup_on_disconnect_or_death(ctx, killed_magician);
+    ctx.db.character_colliders().character_id().delete(killed_magician.id);
     ctx.db.magician().id().delete(killed_magician.id);
 }
 
@@ -35,7 +36,11 @@ pub fn cleanup_on_disconnect_or_death(ctx: &ReducerContext, magician: &mut Magic
 }
 
 pub fn cleanup_on_game_end(ctx: &ReducerContext, game_id: u32) { // Cleans up data related to game - Data: magicians, effects, respawns, and scheduled reducers
-    for magician in ctx.db.magician().game_id().filter(game_id) { ctx.db.magician().id().delete(magician.id); }
+    for magician in ctx.db.magician().game_id().filter(game_id) { 
+        ctx.db.character_colliders().character_id().delete(magician.id);
+        ctx.db.magician().id().delete(magician.id); 
+    }
+
     for effect in ctx.db.player_effects().game_id().filter(game_id) { ctx.db.player_effects().id().delete(effect.id); }
     for respawn in ctx.db.respawn_timers().game_id().filter(game_id) { ctx.db.respawn_timers().scheduled_id().delete(respawn.scheduled_id); }
 
@@ -78,8 +83,8 @@ pub fn create_game(ctx: &ReducerContext) -> Game { // Creates and inserts new ga
     let slow_tick_millis: u64 = 1000 / 10;
     let slow_tick_rate: f32 = 1.0 / 10.0;
 
-    let high_tick_millis: u64 = 1000 / 60;
-    let high_tick_rate: f32 = 1.0 / 60.0;
+    let high_tick_millis: u64 = 1000 / 30;
+    let high_tick_rate: f32 = 1.0 / 30.0;
 
     ctx.db.move_all_magicians().insert(MoveAllMagiciansTimer { scheduled_id: 0, scheduled_at: ScheduleAt::Interval(Duration::from_millis(high_tick_millis).into()), tick_rate: high_tick_rate, game_id: created_game.id });
     ctx.db.handle_magician_timers_timer().insert(HandleMagicianTimersTimer { scheduled_id: 0, scheduled_at: ScheduleAt::Interval(Duration::from_millis(slow_tick_millis).into()), tick_rate: slow_tick_rate, game_id: created_game.id });

@@ -11,7 +11,6 @@ pub struct Magician {
     pub rotation: DbRotation2,
     pub requested_velocity: DbVector3,
     pub corrected_velocity: DbVector3,
-    pub collider: ComplexCollider,
     pub collision_entries: Vec<CollisionEntry>,
     pub is_colliding: bool,
     pub state: MagicianState,
@@ -22,6 +21,14 @@ pub struct Magician {
     pub timers: Vec<Timer>,
     pub bullets: Vec<ThrowingCard>,
     pub bullet_capacity: u8,
+}
+
+#[table(accessor = character_colliders)]
+pub struct CharacterCollider {
+    #[primary_key] #[auto_inc] pub id: u64,
+    #[unique] pub character_id: u64,
+    #[index(btree)] pub character: CharacterType, 
+    pub collider: ComplexCollider
 }
 
 #[table(accessor = move_all_magicians, scheduled(move_magicians))]

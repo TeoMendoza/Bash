@@ -29,8 +29,6 @@ namespace SpacetimeDB.Types
         public DbVector3 RequestedVelocity;
         [DataMember(Name = "corrected_velocity")]
         public DbVector3 CorrectedVelocity;
-        [DataMember(Name = "collider")]
-        public ComplexCollider Collider;
         [DataMember(Name = "collision_entries")]
         public System.Collections.Generic.List<CollisionEntry> CollisionEntries;
         [DataMember(Name = "is_colliding")]
@@ -61,7 +59,6 @@ namespace SpacetimeDB.Types
             DbRotation2 Rotation,
             DbVector3 RequestedVelocity,
             DbVector3 CorrectedVelocity,
-            ComplexCollider Collider,
             System.Collections.Generic.List<CollisionEntry> CollisionEntries,
             bool IsColliding,
             MagicianState State,
@@ -82,7 +79,6 @@ namespace SpacetimeDB.Types
             this.Rotation = Rotation;
             this.RequestedVelocity = RequestedVelocity;
             this.CorrectedVelocity = CorrectedVelocity;
-            this.Collider = Collider;
             this.CollisionEntries = CollisionEntries;
             this.IsColliding = IsColliding;
             this.State = State;
@@ -102,7 +98,6 @@ namespace SpacetimeDB.Types
             this.Rotation = new();
             this.RequestedVelocity = new();
             this.CorrectedVelocity = new();
-            this.Collider = new();
             this.CollisionEntries = new();
             this.KinematicInformation = new();
             this.CombatInformation = new();

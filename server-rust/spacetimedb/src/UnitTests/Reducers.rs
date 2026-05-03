@@ -93,8 +93,9 @@ pub fn test_join_and_start_game_single_player(ctx: &ReducerContext) {
         rotation: DbRotation2 { yaw: 0.0, pitch: 0.0 }
     };
 
-    let magician = create_magician(magician_config);
+    let(magician, collider) = create_magician(magician_config);
     let inserted_magician = ctx.db.magician().insert(magician);
+    let _inserted_collider = ctx.db.character_colliders().insert(collider);
 
     let invincible_effect = create_invincible_effect(5.0);
     add_effects_to_table(ctx, vec![invincible_effect], inserted_magician.id, inserted_magician.id, game_id);
@@ -111,6 +112,7 @@ pub fn test_leave_game_and_cleanup_match_if_empty(ctx: &ReducerContext) {
     let game_id = magician.game_id;
 
     cleanup_on_disconnect_or_death(ctx, &mut magician);
+    ctx.db.character_colliders().character_id().delete(magician.id);
     ctx.db.magician().identity().delete(ctx.sender());
 
     let mut game = ctx.db.game().id().find(game_id).expect("Game not found");

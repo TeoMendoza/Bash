@@ -34,6 +34,9 @@ namespace SpacetimeDB.Types
             AddTable(LoggedInPlayers = new(conn));
             AddTable(Magician = new(conn));
             AddTable(Map = new(conn));
+            AddTable(MyGame = new(conn));
+            AddTable(MyMatchPlayers = new(conn));
+            AddTable(MyPlayer = new(conn));
             AddTable(PlayerEffects = new(conn));
             AddTable(RespawnTimers = new(conn));
             AddTable(UnavailableRequestEvent = new(conn));
@@ -541,6 +544,9 @@ namespace SpacetimeDB.Types
             new QueryBuilder().From.LoggedInPlayers().ToSql(),
             new QueryBuilder().From.Magician().ToSql(),
             new QueryBuilder().From.Map().ToSql(),
+            new QueryBuilder().From.MyGame().ToSql(),
+            new QueryBuilder().From.MyMatchPlayers().ToSql(),
+            new QueryBuilder().From.MyPlayer().ToSql(),
             new QueryBuilder().From.PlayerEffects().ToSql(),
             new QueryBuilder().From.RespawnTimers().ToSql(),
             new QueryBuilder().From.UnavailableRequestEvent().ToSql(),
@@ -558,6 +564,9 @@ namespace SpacetimeDB.Types
         public global::SpacetimeDB.Table<Player, LoggedInPlayersCols, LoggedInPlayersIxCols> LoggedInPlayers() => new("logged_in_players", new LoggedInPlayersCols("logged_in_players"), new LoggedInPlayersIxCols("logged_in_players"));
         public global::SpacetimeDB.Table<Magician, MagicianCols, MagicianIxCols> Magician() => new("magician", new MagicianCols("magician"), new MagicianIxCols("magician"));
         public global::SpacetimeDB.Table<Map, MapCols, MapIxCols> Map() => new("map", new MapCols("map"), new MapIxCols("map"));
+        public global::SpacetimeDB.Table<Game, MyGameCols, MyGameIxCols> MyGame() => new("my_game", new MyGameCols("my_game"), new MyGameIxCols("my_game"));
+        public global::SpacetimeDB.Table<Magician, MyMatchPlayersCols, MyMatchPlayersIxCols> MyMatchPlayers() => new("my_match_players", new MyMatchPlayersCols("my_match_players"), new MyMatchPlayersIxCols("my_match_players"));
+        public global::SpacetimeDB.Table<Magician, MyPlayerCols, MyPlayerIxCols> MyPlayer() => new("my_player", new MyPlayerCols("my_player"), new MyPlayerIxCols("my_player"));
         public global::SpacetimeDB.Table<PlayerEffect, PlayerEffectsCols, PlayerEffectsIxCols> PlayerEffects() => new("player_effects", new PlayerEffectsCols("player_effects"), new PlayerEffectsIxCols("player_effects"));
         public global::SpacetimeDB.Table<RespawnTimersTimer, RespawnTimersCols, RespawnTimersIxCols> RespawnTimers() => new("respawn_timers", new RespawnTimersCols("respawn_timers"), new RespawnTimersIxCols("respawn_timers"));
         public global::SpacetimeDB.Table<UnavailableRequestEvent, UnavailableRequestEventCols, UnavailableRequestEventIxCols> UnavailableRequestEvent() => new("unavailable_request_event", new UnavailableRequestEventCols("unavailable_request_event"), new UnavailableRequestEventIxCols("unavailable_request_event"));

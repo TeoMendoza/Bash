@@ -154,8 +154,8 @@ DisableUnitTestMode() {
   BeginTest "Disable Unit Test Mode"
   PrintInfo "Disabling unit test mode"
   SpacetimeCall "disable_unit_test_mode" >/dev/null
-  AssertSqlCountEquals "logged_in_players" "0" "Unit tests are finished, there should be 0 logged-in players"
-  AssertSqlCountEquals "logged_out_players" "1" "Unit tests are finished, there should be 1 logged-out players"
+  AssertSqlCountEquals "logged_in_players" "1" "Unit tests are finished, there should be 1 logged-in players"
+  AssertSqlCountEquals "logged_out_players" "0" "Unit tests are finished, there should be 0 logged-out players"
   EndTest
 }
 

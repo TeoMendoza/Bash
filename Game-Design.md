@@ -1,5 +1,5 @@
 ## Overview
-Bash is a fast-paced, skill-driven free-for-all arena brawler where 8 to 10 players compete in high-intensity matches built around mechanical precision, movement, and ability mastery. This document explores the design decisions behind the game; why it is structured the way it is, what problems it was designed to solve, and how its systems work together to create the intended experience. It covers the core design philosophy, player count, scoring, character framework, and the areas that went through the most iteration during development.
+Bash is a fast-paced, skill-driven free-for-all arena brawler where 8 to 10 players compete in high-intensity matches built around mechanical precision, movement, and ability mastery. This document explores the design decisions behind the game; why it is structured the way it is, what problems it was designed to solve, and how its systems work together to create the intended experience. It covers the core design philosophy, player count, scoring, and character framework.
 
 ---
 

@@ -31,5 +31,7 @@ The result is a chaotic but controlled arena experience that prioritizes skill e
 ---
 
 ## Additional Documentation
+- [How To Play](How-To-Play.md)
+- [Game Design](Game-Design.md)
 - [Character Design](Character-Design.md)
 - [Systems Design](Systems-Design.md)

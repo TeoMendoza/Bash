@@ -93,3 +93,5 @@ client-unity/[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
 client-unity/.idea/
 # VS Code workspace file (if saved inside client-unity/)
 client-unity/*.code-workspace
+
+*.sh

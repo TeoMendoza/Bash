@@ -94,4 +94,8 @@ client-unity/.idea/
 # VS Code workspace file (if saved inside client-unity/)
 client-unity/*.code-workspace
 
+# Extras
+Animations&Models/
+Sounds - Clean/
+Sounds - Dirty/
 *.sh

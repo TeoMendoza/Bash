@@ -33,9 +33,4 @@ The three playable characters are built around a rock-paper-scissors matchup fra
 
 This structure creates meaningful matchup decisions, particularly since players can switch characters mid match, and keeps the meta dynamic rather than collapsing around a single dominant pick. The harder design challenge was not the framework itself but ensuring each kit felt distinct, viable, and expressive within the chaotic free-for-all format. Kits that are too complex get lost in the noise. Kits that are too simple do not give skilled players enough tools to separate themselves.
 
----
-
-## Iteration
-The core gameplay loop was established early and remained stable throughout development. The primary area of iteration was character kits.
-
-The challenge was threading a specific needle: kits needed to enable high skill expression and meaningful outplay potential, while remaining readable and fair in a chaotic multi-player environment. Each character went through multiple passes to find that balance, ensuring that mastery feels rewarding without the kit becoming a crutch or an unreadable nuisance for opponents.
+The core gameplay loop was established early and remained stable throughout development, but character kits went through significant iteration to find that balance. Each character went through multiple passes to ensure that mastery feels rewarding without the kit becoming a crutch or an unreadable nuisance for opponents.
